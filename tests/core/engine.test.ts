@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Engine } from '../../src/core/engine.js';
-import { MultiHudConfig, ProviderAdapter, TokenUsage, QuotaWindow } from '../../src/types/index.js';
-import { builtInThemes } from '../../src/themes/built-ins.js';
+import { MultiHudConfig, ProviderAdapter } from '../../src/types/index.js';
+import { Cache } from '../../src/core/cache.js';
 
 class MockProvider implements ProviderAdapter {
   readonly name = 'mock';
@@ -40,5 +40,29 @@ describe('Engine', () => {
     const engine = new Engine(overrideConfig, '/tmp');
     const provider = engine.detectProvider('deepseek-chat');
     expect(provider).toBe('kimi');
+  });
+
+  it('setProvider sets the current provider and starts polling', () => {
+    const engine = new Engine(config, '/tmp');
+    const mockProvider = new MockProvider();
+    engine.setProvider('mock', mockProvider);
+    expect(engine.getCurrentProvider()).toBe(mockProvider);
+    expect(engine.getCache()).toBeInstanceOf(Cache);
+  });
+
+  it('setProvider does not re-set same provider', () => {
+    const engine = new Engine(config, '/tmp');
+    const mockProvider = new MockProvider();
+    engine.setProvider('mock', mockProvider);
+    const stopPollingSpy = vi.spyOn(engine as any, 'stopPolling');
+    engine.setProvider('mock', mockProvider);
+    expect(stopPollingSpy).not.toHaveBeenCalled();
+  });
+
+  it('destroy stops polling', () => {
+    const engine = new Engine(config, '/tmp');
+    const mockProvider = new MockProvider();
+    engine.setProvider('mock', mockProvider);
+    expect(() => engine.destroy()).not.toThrow();
   });
 });
