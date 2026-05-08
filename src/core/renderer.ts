@@ -91,8 +91,8 @@ export function renderStatusline(input: RenderInput): string[] {
   return lines;
 }
 
-function renderBar(percentage: number, fg: string, bg: string, width: number): string {
-  const filled = Math.round((percentage / 100) * width);
+export function renderBar(percentage: number, fg: string, bg: string, width: number): string {
+  const filled = Math.min(width, Math.round((percentage / 100) * width));
   const empty = width - filled;
   return `${fg}${'█'.repeat(filled)}${bg}${'░'.repeat(empty)}\x1b[0m`;
 }
