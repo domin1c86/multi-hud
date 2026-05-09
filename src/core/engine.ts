@@ -42,8 +42,10 @@ export class Engine {
   }
 
   private startPolling(): void {
-    this.pollOnce();
-    this.pollTimer = setInterval(() => this.pollOnce(), this.config.pollIntervalMs);
+    this.pollOnce().catch(() => {});
+    this.pollTimer = setInterval(() => {
+      this.pollOnce().catch(() => {});
+    }, this.config.pollIntervalMs);
   }
 
   private stopPolling(): void {
