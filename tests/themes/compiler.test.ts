@@ -35,6 +35,16 @@ describe('parseColorSpec', () => {
     expect(parsed.fg).toBe('#39c5bb');
   });
 
+  it('is case insensitive for background', () => {
+    const parsed = parseColorSpec('[#39C5BB]');
+    expect(parsed.bg).toBe('#39c5bb');
+  });
+
+  it('throws on invalid hex characters', () => {
+    expect(() => parseColorSpec('#gggggg')).toThrow('Invalid color spec: "#gggggg"');
+    expect(() => parseColorSpec('[#zzzzzz]')).toThrow('Invalid color spec: "[#zzzzzz]"');
+  });
+
   it('throws on empty string', () => {
     expect(() => parseColorSpec('')).toThrow('Invalid color spec: ""');
   });
@@ -116,10 +126,7 @@ describe('derivation', () => {
 describe('compileColorSpec', () => {
   it('compiles foreground role', () => {
     const ansi = compileColorSpec('#39c5bb', 'fg');
-    expect(ansi).toContain('\x1b[38;2;');
-    expect(ansi).toContain('57');
-    expect(ansi).toContain('197');
-    expect(ansi).toContain('187');
+    expect(ansi).toBe('\x1b[38;2;57;197;187m');
   });
 
   it('compiles background role', () => {
@@ -149,37 +156,57 @@ describe('compileColorSpec', () => {
 
   it('applies both bold and italic', () => {
     const ansi = compileColorSpec('bi#39c5bb', 'fg');
-    expect(ansi).toContain('\x1b[1m');
-    expect(ansi).toContain('\x1b[3m');
+    expect(ansi).toBe('\x1b[1m\x1b[3m\x1b[38;2;57;197;187m');
   });
 
   it('passes through raw ANSI', () => {
     const ansi = compileColorSpec('\x1b[36m', 'fg');
     expect(ansi).toBe('\x1b[36m');
   });
+
+  it('applies styles with derived foreground for bg role', () => {
+    const ansi = compileColorSpec('bi[#808080]', 'bg');
+    expect(ansi).toBe('\x1b[1m\x1b[3m\x1b[48;2;128;128;128m');
+  });
 });
 
 describe('compileTheme', () => {
-  it('compiles a theme with hex color specs', () => {
+  it('compiles all color fields in a theme', () => {
     const theme = {
       ...builtInThemes.default,
       colors: {
-        ...builtInThemes.default.colors,
         model: '#39c5bb',
+        label: '#757575',
+        warning: '#ff9800',
+        error: '#f44336',
+        dim: '#9e9e9e',
+        toolActive: '#ff9800',
+        toolDone: '#4caf50',
+        agentRunning: '#00bcd4',
+        todoPending: '#ff9800',
+        todoDone: '#4caf50',
+        cost: '#e91e63',
+        gitBranch: '#2196f3',
+        gitDirty: '#ff9800',
       },
       bars: {
-        ...builtInThemes.default.bars,
-        context: {
-          ...builtInThemes.default.bars.context,
-          fgColor: '#39c5bb',
-          bgColor: '[#7f7f7f]',
-        },
+        context: { fgColor: '#4caf50', bgColor: '[#000000]', animation: { enabled: false, mode: 'on-change' as const, type: 'none' as const, triggerThreshold: 5 } },
+        quota5h: { fgColor: '#ff9800', bgColor: '[#000000]', animation: { enabled: false, mode: 'on-change' as const, type: 'none' as const, triggerThreshold: 5 } },
+        quota24h: { fgColor: '#2196f3', bgColor: '[#000000]', animation: { enabled: false, mode: 'on-change' as const, type: 'none' as const, triggerThreshold: 5 } },
+        quota7d: { fgColor: '#e91e63', bgColor: '[#000000]', animation: { enabled: false, mode: 'on-change' as const, type: 'none' as const, triggerThreshold: 5 } },
+        quota30d: { fgColor: '#00bcd4', bgColor: '[#000000]', animation: { enabled: false, mode: 'on-change' as const, type: 'none' as const, triggerThreshold: 5 } },
       },
+      icons: builtInThemes.default.icons,
+      layout: builtInThemes.default.layout,
     };
     const compiled = compileTheme(theme);
-    expect(compiled.colors.model).toContain('\x1b[38;2;');
-    expect(compiled.bars.context.fgColor).toContain('\x1b[38;2;');
-    expect(compiled.bars.context.bgColor).toContain('\x1b[48;2;');
+    for (const key of Object.keys(theme.colors)) {
+      expect(compiled.colors[key as keyof typeof compiled.colors]).toContain('\x1b[38;2;');
+    }
+    for (const key of Object.keys(theme.bars)) {
+      expect(compiled.bars[key as keyof typeof compiled.bars].fgColor).toContain('\x1b[38;2;');
+      expect(compiled.bars[key as keyof typeof compiled.bars].bgColor).toContain('\x1b[48;2;');
+    }
   });
 
   it('passes through raw ANSI in built-in default theme', () => {

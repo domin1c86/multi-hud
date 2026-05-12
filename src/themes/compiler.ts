@@ -60,6 +60,7 @@ function formatHex(r: number, g: number, b: number): string {
     .join('');
 }
 
+// Derivation ratio: fg / bg = 1.5 (reference pair: #c0c0c0 / #808080)
 export function deriveBackground(fg: string): string {
   const { r, g, b } = parseHex(fg);
   return formatHex(
@@ -84,10 +85,6 @@ export function compileColorSpec(spec: string, role: 'fg' | 'bg'): string {
   }
 
   const parsed = parseColorSpec(spec);
-
-  if (!parsed.fg && !parsed.bg) {
-    return '\x1b[0m';
-  }
 
   let hex: string;
   if (role === 'fg') {
@@ -119,10 +116,8 @@ export function compileTheme(theme: Theme): Theme {
   }
 
   for (const barKey of Object.keys(compiled.bars) as Array<keyof Theme['bars']>) {
-    const bar = { ...compiled.bars[barKey] };
-    bar.fgColor = compileColorSpec(bar.fgColor, 'fg');
-    bar.bgColor = compileColorSpec(bar.bgColor, 'bg');
-    compiled.bars[barKey] = bar;
+    compiled.bars[barKey].fgColor = compileColorSpec(compiled.bars[barKey].fgColor, 'fg');
+    compiled.bars[barKey].bgColor = compileColorSpec(compiled.bars[barKey].bgColor, 'bg');
   }
 
   return compiled;
