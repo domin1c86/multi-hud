@@ -1,3 +1,5 @@
+import { Theme } from '../types/index.js';
+
 export interface ParsedColor {
   fg?: string;
   bg?: string;
@@ -75,8 +77,6 @@ export function deriveForeground(bg: string): string {
     Math.round(b * 3 / 2),
   );
 }
-
-import { Theme } from '../types/index.js';
 
 export function compileColorSpec(spec: string, role: 'fg' | 'bg'): string {
   if (spec.startsWith('\x1b[')) {
