@@ -209,8 +209,35 @@ describe('compileTheme', () => {
     }
   });
 
-  it('passes through raw ANSI in built-in default theme', () => {
-    const compiled = compileTheme(builtInThemes.default);
+  it('passes through raw ANSI codes', () => {
+    const theme = {
+      ...builtInThemes.default,
+      colors: {
+        model: '\x1b[36m',
+        label: '\x1b[90m',
+        warning: '\x1b[33m',
+        error: '\x1b[31m',
+        dim: '\x1b[90m',
+        toolActive: '\x1b[33m',
+        toolDone: '\x1b[32m',
+        agentRunning: '\x1b[36m',
+        todoPending: '\x1b[33m',
+        todoDone: '\x1b[32m',
+        cost: '\x1b[35m',
+        gitBranch: '\x1b[34m',
+        gitDirty: '\x1b[33m',
+      },
+      bars: {
+        context: { fgColor: '\x1b[32m', bgColor: '\x1b[40m', animation: { enabled: false, mode: 'on-change' as const, type: 'none' as const, triggerThreshold: 5 } },
+        quota5h: { fgColor: '\x1b[33m', bgColor: '\x1b[40m', animation: { enabled: false, mode: 'on-change' as const, type: 'none' as const, triggerThreshold: 5 } },
+        quota24h: { fgColor: '\x1b[34m', bgColor: '\x1b[40m', animation: { enabled: false, mode: 'on-change' as const, type: 'none' as const, triggerThreshold: 5 } },
+        quota7d: { fgColor: '\x1b[35m', bgColor: '\x1b[40m', animation: { enabled: false, mode: 'on-change' as const, type: 'none' as const, triggerThreshold: 5 } },
+        quota30d: { fgColor: '\x1b[36m', bgColor: '\x1b[40m', animation: { enabled: false, mode: 'on-change' as const, type: 'none' as const, triggerThreshold: 5 } },
+      },
+      icons: builtInThemes.default.icons,
+      layout: builtInThemes.default.layout,
+    };
+    const compiled = compileTheme(theme);
     expect(compiled.colors.model).toBe('\x1b[36m');
     expect(compiled.bars.context.fgColor).toBe('\x1b[32m');
     expect(compiled.bars.context.bgColor).toBe('\x1b[40m');
