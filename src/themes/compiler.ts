@@ -27,29 +27,51 @@ export function parseColorSpec(spec: string): ParsedColor {
   const fgMatch = s.match(/^#([0-9a-fA-F]{6})$/);
   if (fgMatch) {
     fg = '#' + fgMatch[1].toLowerCase();
+    s = s.slice(fgMatch[0].length);
+  }
+
+  if (!fg && !bg) {
+    throw new Error(`Invalid color spec: "${spec}"`);
+  }
+
+  if (s.length > 0) {
+    throw new Error(`Invalid color spec: "${spec}" (unexpected: "${s}")`);
   }
 
   return { fg, bg, bold, italic };
 }
 
+function parseHex(hex: string): { r: number; g: number; b: number } {
+  if (!/^#[0-9a-fA-F]{6}$/.test(hex)) {
+    throw new Error(`Invalid hex color: "${hex}"`);
+  }
+  return {
+    r: parseInt(hex.slice(1, 3), 16),
+    g: parseInt(hex.slice(3, 5), 16),
+    b: parseInt(hex.slice(5, 7), 16),
+  };
+}
+
+function formatHex(r: number, g: number, b: number): string {
+  return '#' + [r, g, b]
+    .map((c) => Math.max(0, Math.min(255, c)).toString(16).padStart(2, '0'))
+    .join('');
+}
+
 export function deriveBackground(fg: string): string {
-  const r = parseInt(fg.slice(1, 3), 16);
-  const g = parseInt(fg.slice(3, 5), 16);
-  const b = parseInt(fg.slice(5, 7), 16);
-  return '#' + [
-    Math.max(0, Math.min(255, Math.round(r * 2 / 3))),
-    Math.max(0, Math.min(255, Math.round(g * 2 / 3))),
-    Math.max(0, Math.min(255, Math.round(b * 2 / 3))),
-  ].map((c) => c.toString(16).padStart(2, '0')).join('');
+  const { r, g, b } = parseHex(fg);
+  return formatHex(
+    Math.round(r * 2 / 3),
+    Math.round(g * 2 / 3),
+    Math.round(b * 2 / 3),
+  );
 }
 
 export function deriveForeground(bg: string): string {
-  const r = parseInt(bg.slice(1, 3), 16);
-  const g = parseInt(bg.slice(3, 5), 16);
-  const b = parseInt(bg.slice(5, 7), 16);
-  return '#' + [
-    Math.max(0, Math.min(255, Math.round(r * 3 / 2))),
-    Math.max(0, Math.min(255, Math.round(g * 3 / 2))),
-    Math.max(0, Math.min(255, Math.round(b * 3 / 2))),
-  ].map((c) => c.toString(16).padStart(2, '0')).join('');
+  const { r, g, b } = parseHex(bg);
+  return formatHex(
+    Math.round(r * 3 / 2),
+    Math.round(g * 3 / 2),
+    Math.round(b * 3 / 2),
+  );
 }
