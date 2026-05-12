@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { renderStatusline, renderBar } from '../../src/core/renderer.js';
 import { QuotaWindow } from '../../src/types/index.js';
-import { builtInThemes } from '../../src/themes/built-ins.js';
+import { resolveTheme } from '../../src/themes/index.js';
 
-const theme = builtInThemes.default;
+const theme = resolveTheme('default', {});
 
 describe('renderStatusline', () => {
   it('renders context bar', () => {
