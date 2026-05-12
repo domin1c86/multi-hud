@@ -75,3 +75,55 @@ export function deriveForeground(bg: string): string {
     Math.round(b * 3 / 2),
   );
 }
+
+import { Theme } from '../types/index.js';
+
+export function compileColorSpec(spec: string, role: 'fg' | 'bg'): string {
+  if (spec.startsWith('\x1b[')) {
+    return spec;
+  }
+
+  const parsed = parseColorSpec(spec);
+
+  if (!parsed.fg && !parsed.bg) {
+    return '\x1b[0m';
+  }
+
+  let hex: string;
+  if (role === 'fg') {
+    hex = parsed.fg ?? deriveForeground(parsed.bg!);
+  } else {
+    hex = parsed.bg ?? deriveBackground(parsed.fg!);
+  }
+
+  const parts: string[] = [];
+  if (parsed.bold) parts.push('\x1b[1m');
+  if (parsed.italic) parts.push('\x1b[3m');
+
+  const { r, g, b } = parseHex(hex);
+
+  if (role === 'fg') {
+    parts.push(`\x1b[38;2;${r};${g};${b}m`);
+  } else {
+    parts.push(`\x1b[48;2;${r};${g};${b}m`);
+  }
+
+  return parts.join('');
+}
+
+export function compileTheme(theme: Theme): Theme {
+  const compiled = structuredClone(theme) as Theme;
+
+  for (const key of Object.keys(compiled.colors) as Array<keyof Theme['colors']>) {
+    compiled.colors[key] = compileColorSpec(compiled.colors[key], 'fg');
+  }
+
+  for (const barKey of Object.keys(compiled.bars) as Array<keyof Theme['bars']>) {
+    const bar = { ...compiled.bars[barKey] };
+    bar.fgColor = compileColorSpec(bar.fgColor, 'fg');
+    bar.bgColor = compileColorSpec(bar.bgColor, 'bg');
+    compiled.bars[barKey] = bar;
+  }
+
+  return compiled;
+}
