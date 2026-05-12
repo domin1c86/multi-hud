@@ -1,6 +1,7 @@
 import { Theme } from '../types/index.js';
 import { builtInThemes } from './built-ins.js';
 import { mergeTheme } from './custom.js';
+import { compileTheme } from './compiler.js';
 
 export function resolveTheme(
   themeName: string,
@@ -8,7 +9,8 @@ export function resolveTheme(
   registry: Record<string, Theme> = builtInThemes,
 ): Theme {
   const base = registry[themeName] ?? registry['default'];
-  return mergeTheme(base, customOverrides);
+  const merged = mergeTheme(base, customOverrides);
+  return compileTheme(merged);
 }
 
-export { builtInThemes, mergeTheme };
+export { builtInThemes, mergeTheme, compileTheme };

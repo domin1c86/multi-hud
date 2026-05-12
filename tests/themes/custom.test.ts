@@ -9,8 +9,9 @@ describe('resolveTheme', () => {
   });
 
   it('merges custom overrides', () => {
-    const theme = resolveTheme('default', { colors: { model: '[35m' } }, builtInThemes);
-    expect(theme.colors.model).toBe('[35m');
-    expect(theme.colors.warning).toBe(builtInThemes.default.colors.warning);
+    const theme = resolveTheme('default', { colors: { model: '#e91e63' } }, builtInThemes);
+    expect(theme.colors.model).toContain('[38;2;');
+    const baseTheme = resolveTheme('default', {}, builtInThemes);
+    expect(theme.colors.warning).toBe(baseTheme.colors.warning);
   });
 });

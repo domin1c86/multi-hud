@@ -28,7 +28,9 @@ export interface AnimationConfig {
 }
 
 export interface BarStyle {
+  /** Color spec (e.g. "#39c5bb", "[#7f7f7f]", "b#39c5bb[#7f7f7f]") */
   fgColor: string;
+  /** Color spec (e.g. "[#7f7f7f]", "#39c5bb") */
   bgColor: string;
   animation: AnimationConfig;
 }
