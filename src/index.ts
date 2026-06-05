@@ -73,8 +73,8 @@ export async function main(): Promise<void> {
             const currentTokens = ((m.input_tokens as number) || 0) + ((m.cache_read_input_tokens as number) || 0);
             const contextPercentage = Math.min(100, (currentTokens / contextLimit) * 100);
 
-            const tokenUsage = cache.get<ReturnType<ProviderAdapter['getTokenUsage']>>('tokenUsage');
-            const quotas = cache.get<ReturnType<ProviderAdapter['getQuotas']>>('quotas');
+            const tokenUsage = cache.get<import('./types/index.js').TokenUsage | null>('tokenUsage');
+            const quotas = cache.get<import('./types/index.js').QuotaWindow[] | null>('quotas');
             const error = cache.get<string>('error');
 
             let cost: number | null = null;

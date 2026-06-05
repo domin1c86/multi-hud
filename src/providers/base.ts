@@ -8,8 +8,8 @@ export abstract class BaseProvider implements ProviderAdapter {
     this.config = config;
   }
 
-  abstract getTokenUsage(): Promise<ReturnType<ProviderAdapter['getTokenUsage']>>;
-  abstract getQuotas(): Promise<ReturnType<ProviderAdapter['getQuotas']>>;
+  abstract getTokenUsage(): Promise<import('../types/index.js').TokenUsage | null>;
+  abstract getQuotas(): Promise<import('../types/index.js').QuotaWindow[] | null>;
   abstract getContextLimit(modelId: string): Promise<number>;
 
   async validateConfig(): Promise<boolean> {

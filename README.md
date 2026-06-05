@@ -1,6 +1,6 @@
 # multi-hud
 
-Claude Code 状态栏插件，支持 DeepSeek、Kimi、GLM、MiniMax 等第三方中文 LLM 提供商的实时用量监控。
+Claude Code 状态栏插件，支持 DeepSeek、Kimi、GLM、MiniMax 第三方中文 LLM 提供商的实时用量监控。
 
 灵感来自社区插件 [claude-hud](https://github.com/asilvadesigns/claude-hud)，但针对第三方提供商的计费模式（API 按量计费 vs Coding Plan 时间窗口配额）进行了适配。
 
@@ -12,7 +12,7 @@ Claude Code 状态栏插件，支持 DeepSeek、Kimi、GLM、MiniMax 等第三�
 - **费用估算** — 基于定价配置实时计算当前对话成本
 - **工具/Agent/Todo 追踪** — 解析 Claude Code 的 transcript 事件，显示活跃工具、运行中 Agent 和待办事项
 - **Git 状态** — 显示当前分支、是否有未提交更改、ahead/behind
-- **多主题系统** — 内置 default、minimal、powerline、neon 四套主题，支持深度自定义颜色和图标
+- **多主题系统** — 内置 default、minimal、powerline、neon 四套主题，支持 hex 颜色规格自定义（如 `#39c5bb`、`b#ff0000`）和图标覆盖
 - **动画效果** — 进度条支持 pulse、laser 等动画模式
 - **自动探测提供商** — 根据模型 ID 前缀自动选择对应适配器（如 `deepseek-chat` → DeepSeek）
 
@@ -123,7 +123,7 @@ New-Item -ItemType SymbolicLink -Path "$env:USERPROFILE\.claude\plugins\multi-hu
 | `default` | 默认彩色主题，带有提供商 Emoji 图标 |
 | `minimal` | 极简无颜色主题，使用纯 ASCII 字符，适合无颜色终端 |
 | `powerline` | 仿 Powerline 风格，使用字母缩写和高对比度背景色 |
-| `neon` | 霓虹高亮风格，更宽的进度条和鲜艳的 ANSI 颜色 |
+| `neon` | 霓虹高亮风格，更宽的进度条和鲜艳的真彩色 |
 
 ### 自定义主题
 
@@ -134,8 +134,8 @@ New-Item -ItemType SymbolicLink -Path "$env:USERPROFILE\.claude\plugins\multi-hu
   "theme": "default",
   "customTheme": {
     "colors": {
-      "model": "[35m",
-      "cost": "\\u001b[32m"
+      "model": "#e91e63",
+      "cost": "#4caf50"
     },
     "icons": {
       "deepseek": "🚀",
@@ -152,7 +152,7 @@ New-Item -ItemType SymbolicLink -Path "$env:USERPROFILE\.claude\plugins\multi-hu
 
 可自定义的部分：
 
-- **`colors`** — 模型名、标签、警告、错误、暗淡、工具/Agent/Todo/成本/Git 各状态的颜色（ANSI 转义码）
+- **`colors`** — 模型名、标签、警告、错误、暗淡、工具/Agent/Todo/成本/Git 各状态的颜色（hex 颜色规格，如 `#39c5bb`、`b#ff0000`）
 - **`bars`** — 上下文条和各配额条的前景色、背景色、动画配置
 - **`icons`** — 提供商图标、警告/错误/工具/Agent/Todo/Git 图标
 - **`layout`** — 是否紧凑模式、是否显示标签、进度条宽度
@@ -179,6 +179,7 @@ src/
   themes/
     built-ins.ts        # 内置主题
     custom.ts           # 自定义主题合并逻辑
+    compiler.ts         # hex 颜色规格解析、推导、ANSI 编译
     index.ts            # 主题注册与解析
   types/
     index.ts            # 共享 TypeScript 类型
@@ -208,8 +209,8 @@ npm run build
 
 ## 测试覆盖
 
-- 18 个测试文件，64 个测试用例全部通过
-- 涵盖配置加载、缓存、动画生成、主题解析、所有提供商适配器、transcript 解析、Git 状态、费用计算、渲染器、引擎、插件入口点和集成测试
+- 19 个测试文件，100 个测试用例全部通过
+- 涵盖配置加载、缓存、动画生成、主题解析、hex 颜色编译、所有提供商适配器、transcript 解析、Git 状态、费用计算、渲染器、引擎、插件入口点和集成测试
 
 ## 许可证
 

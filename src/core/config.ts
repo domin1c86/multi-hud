@@ -43,19 +43,19 @@ export function loadConfig(configPath: string): MultiHudConfig {
   }
   const raw = fs.readFileSync(configPath, 'utf-8');
   const parsed = JSON.parse(raw);
-  return deepMerge(defaultConfig, parsed);
+  return deepMerge(defaultConfig as unknown as Record<string, unknown>, parsed) as unknown as MultiHudConfig;
 }
 
-function deepMerge<T extends Record<string, unknown>>(target: T, source: unknown): T {
+function deepMerge(target: Record<string, unknown>, source: unknown): Record<string, unknown> {
   if (!source || typeof source !== 'object') return target;
   const result = { ...target };
   for (const key of Object.keys(source as Record<string, unknown>)) {
     const srcVal = (source as Record<string, unknown>)[key];
     const tgtVal = result[key];
     if (srcVal && typeof srcVal === 'object' && !Array.isArray(srcVal) && tgtVal && typeof tgtVal === 'object') {
-      result[key] = deepMerge(tgtVal as Record<string, unknown>, srcVal) as T[Extract<keyof T, string>];
+      result[key] = deepMerge(tgtVal as Record<string, unknown>, srcVal);
     } else {
-      result[key] = srcVal as T[Extract<keyof T, string>];
+      result[key] = srcVal;
     }
   }
   return result;
