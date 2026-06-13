@@ -1,5 +1,5 @@
 import { BaseProvider } from './base.js';
-import { TokenUsage, QuotaWindow } from '../types/index.js';
+import { QuotaWindow } from '../types/index.js';
 
 interface GLMLimitItem {
   type: 'TIME_LIMIT' | 'TOKENS_LIMIT';
@@ -26,28 +26,8 @@ const UNIT_NAME: Record<number, QuotaWindow['name']> = {
 export class GlmProvider extends BaseProvider {
   readonly name = 'glm';
 
-  async getTokenUsage(): Promise<TokenUsage | null> {
-    try {
-      const data = await this.fetchJson<{
-        success: boolean;
-        data: {
-          totalTokens: number;
-          inputTokens: number;
-          outputTokens: number;
-        };
-      }>('/api/monitor/usage/model-usage');
-      if (!data.success) return null;
-      return {
-        totalTokens: data.data.totalTokens,
-        inputTokens: data.data.inputTokens,
-        outputTokens: data.data.outputTokens,
-      };
-    } catch {
-      return null;
-    }
-  }
-
-  async getQuotas(): Promise<QuotaWindow[] | null> {
+  override async getQuotas(): Promise<QuotaWindow[] | null> {
+    if (!this.config.apiKey) return null;
     try {
       const data = await this.fetchJson<GLMQuotaResponse>('/api/monitor/usage/quota/limit');
       if (!data.success) return null;
@@ -64,14 +44,5 @@ export class GlmProvider extends BaseProvider {
     } catch {
       return null;
     }
-  }
-
-  async getContextLimit(modelId: string): Promise<number> {
-    const limits: Record<string, number> = {
-      'glm-4': 128000,
-      'glm-4-plus': 128000,
-      'glm-4-flash': 128000,
-    };
-    return limits[modelId] ?? 128000;
   }
 }

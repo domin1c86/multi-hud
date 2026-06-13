@@ -1,12 +1,14 @@
-import { Theme, QuotaWindow, TokenUsage } from '../types/index.js';
+import { Theme, QuotaWindow, TokenUsage, BalanceInfo } from '../types/index.js';
 import { GitStatus } from './git.js';
 import { ToolCall, AgentStatus, TodoItem } from './transcript.js';
 
 export interface RenderInput {
   modelId: string;
   contextPercentage: number;
+  contextSize?: number;
   tokenUsage?: TokenUsage | null;
   quotas?: QuotaWindow[] | null;
+  balance?: BalanceInfo | null;
   cost?: number | null;
   theme: Theme;
   gitStatus: GitStatus;
@@ -23,6 +25,18 @@ export interface RenderInput {
   errorMessage?: string;
 }
 
+function formatTokens(tokens: number): string {
+  if (tokens >= 1_000_000) {
+    const m = tokens / 1_000_000;
+    return `${m % 1 === 0 ? m.toFixed(0) : m.toFixed(1)}M`;
+  }
+  if (tokens >= 1_000) {
+    const k = tokens / 1_000;
+    return `${k % 1 === 0 ? k.toFixed(0) : k.toFixed(1)}k`;
+  }
+  return String(tokens);
+}
+
 export function renderStatusline(input: RenderInput): string[] {
   const lines: string[] = [];
   const t = input.theme;
@@ -36,10 +50,11 @@ export function renderStatusline(input: RenderInput): string[] {
   }
   const ctxBar = renderBar(input.contextPercentage, t.bars.context.fgColor, t.bars.context.bgColor, t.layout.barWidth);
   const ctxLabel = t.layout.showLabels ? 'Context ' : '';
-  line1 += ` │ ${t.colors.label}${ctxLabel}${reset}${ctxBar} ${Math.round(input.contextPercentage)}%`;
+  const ctxSizeStr = input.contextSize ? ` ${formatTokens(input.contextSize)}` : '';
+  line1 += ` │ ${t.colors.label}${ctxLabel}${reset}${ctxBar} ${Math.round(input.contextPercentage)}%${ctxSizeStr}`;
   lines.push(line1);
 
-  // Line 2: Usage/Quota or Error
+  // Line 2: Balance / Quotas / Tokens+Cost or Error
   if (input.errorMessage) {
     lines.push(`${t.colors.warning}${t.icons.warning} ${input.errorMessage}${reset}`);
   } else if (input.quotas && input.quotas.length > 0) {
@@ -50,12 +65,19 @@ export function renderStatusline(input: RenderInput): string[] {
     });
     lines.push(parts.join(' │ '));
   } else if (input.tokenUsage) {
-    const tokens = `${Math.round(input.tokenUsage.inputTokens / 100) / 10}k ↑ / ${Math.round(input.tokenUsage.outputTokens / 100) / 10}k ↓ │ Total ${Math.round(input.tokenUsage.totalTokens / 100) / 10}k`;
-    let line2 = `${t.colors.label}Tokens ${reset}${tokens}`;
+    const inputStr = formatTokens(input.tokenUsage.inputTokens);
+    const outputStr = formatTokens(input.tokenUsage.outputTokens);
+    const totalStr = formatTokens(input.tokenUsage.totalTokens);
+    let line2 = `${t.colors.label}Tokens${reset} ${inputStr} ↑ / ${outputStr} ↓ │ Total ${totalStr}`;
     if (input.displayConfig.showCost && input.cost !== null && input.cost !== undefined) {
       line2 += ` │ ${t.colors.cost}¥${input.cost.toFixed(3)}${reset}`;
     }
     lines.push(line2);
+  }
+
+  // Line 2.5: Balance (shown when available, indepenently from quotas/tokens)
+  if (input.balance) {
+    lines.push(`${t.colors.label}Balance${reset} ${input.balance.currency}${input.balance.available.toFixed(2)}`);
   }
 
   // Line 3: Tools

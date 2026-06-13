@@ -1,17 +1,21 @@
 import { MultiHudConfig, ProviderAdapter } from '../types/index.js';
 import { Cache } from './cache.js';
 
+/** Providers that have an API we can poll for quota data. Only GLM currently. */
+const POLLABLE_PROVIDERS = new Set(['glm']);
+
+/** Providers that have a balance API. */
+const BALANCE_PROVIDERS = new Set(['deepseek', 'kimi']);
+
 export class Engine {
   private config: MultiHudConfig;
-  private cwd: string;
   private cache: Cache;
   private currentProvider: ProviderAdapter | null = null;
   private providerName: string | null = null;
   private pollTimer: ReturnType<typeof setInterval> | null = null;
 
-  constructor(config: MultiHudConfig, cwd: string) {
+  constructor(config: MultiHudConfig) {
     this.config = config;
-    this.cwd = cwd;
     this.cache = new Cache();
   }
 
@@ -31,7 +35,9 @@ export class Engine {
     this.providerName = name;
     this.currentProvider = adapter;
     this.cache.clear();
-    this.startPolling();
+    if (POLLABLE_PROVIDERS.has(name) || BALANCE_PROVIDERS.has(name)) {
+      this.startPolling();
+    }
   }
 
   getCache(): Cache {
@@ -63,12 +69,10 @@ export class Engine {
       if (quotas) {
         this.cache.set('quotas', quotas, this.config.pollIntervalMs + 5000);
       }
-      const usage = await this.currentProvider.getTokenUsage();
-      if (usage) {
-        this.cache.set('tokenUsage', usage, this.config.pollIntervalMs + 5000);
+      const balance = await this.currentProvider.getBalance?.();
+      if (balance) {
+        this.cache.set('balance', balance, this.config.pollIntervalMs + 5000);
       }
-      const limit = await this.currentProvider.getContextLimit('default');
-      this.cache.set('contextLimit', limit, 300000);
     } catch (err) {
       this.cache.set('error', String(err), 60000);
     }

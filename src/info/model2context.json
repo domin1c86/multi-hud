@@ -1,0 +1,32 @@
+{
+    "mimo":"1m",
+    "kimi":{
+        "kimi-k2.7-code":"256k",
+        "kimi-k2.6":"256k",
+        "kimi-k2.5":"256k",
+        "moonshot-v1-8k":"8k",
+        "moonshot-v1-32k":"32k",
+        "moonshot-v1-128k":"128k",
+        "moonshot-v1-8k-vision-preview":"8k",
+        "moonshot-v1-32k-vision-preview":"32k",
+        "moonshot-v1-128k-vision-preview":"128k"
+    },
+    "deepseek":"1m",
+    "glm":{
+        "glm-5.1":"200k",
+        "glm-5":"200k",
+        "glm-5-turbo":"200k",
+        "glm-4.7":"200k",
+        "glm-4.6":"200k",
+        "glm-4.5":"100k",
+        "glm-5v-turbo":"200k",
+        "glm-4.6v":"128k",
+        "glm-4.6v-flashx":"128k",
+        "glm-4.6v-flash":"128k"
+    },
+    "minimax":{
+        "minimax-m3":"1m",
+        "minimax-m2.7":"200k",
+        "minimax-m2.7-highspeed":"200k"
+    }
+}

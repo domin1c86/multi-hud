@@ -2,6 +2,8 @@ export interface TokenUsage {
   inputTokens: number;
   outputTokens: number;
   totalTokens: number;
+  cacheReadTokens: number;
+  cacheCreationTokens: number;
 }
 
 export interface QuotaWindow {
@@ -12,11 +14,16 @@ export interface QuotaWindow {
   resetsAt?: Date;
 }
 
+export interface BalanceInfo {
+  provider: string;
+  available: number;
+  currency: string;
+}
+
 export interface ProviderAdapter {
   readonly name: string;
-  getTokenUsage(): Promise<TokenUsage | null>;
   getQuotas(): Promise<QuotaWindow[] | null>;
-  getContextLimit(modelId: string): Promise<number>;
+  getBalance?(): Promise<BalanceInfo | null>;
   validateConfig(): Promise<boolean>;
 }
 
@@ -85,11 +92,6 @@ export interface ProviderConfig {
   baseUrl: string | null;
 }
 
-export interface PricingConfig {
-  currency: string;
-  models: Record<string, { input: number; output: number }>;
-}
-
 export interface MultiHudConfig {
   providerOverride: string | null;
   pollIntervalMs: number;
@@ -108,7 +110,6 @@ export interface MultiHudConfig {
     showTodos: boolean;
     showCost: boolean;
   };
-  pricing: PricingConfig;
   providers: {
     deepseek: ProviderConfig;
     kimi: ProviderConfig;

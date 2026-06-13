@@ -19,20 +19,6 @@ export const defaultConfig: MultiHudConfig = {
     showTodos: true,
     showCost: true,
   },
-  pricing: {
-    currency: 'CNY',
-    models: {
-      'deepseek-chat': { input: 0.001, output: 0.002 },
-      'deepseek-coder': { input: 0.001, output: 0.002 },
-      'kimi-latest': { input: 0.003, output: 0.006 },
-      'glm-4': { input: 0.005, output: 0.005 },
-      'minimax-text-01': { input: 0.001, output: 0.001 },
-      'mimo-v2-flash': { input: 0.0007, output: 0.0021 },
-      'mimo-v2-pro': { input: 0.0007, output: 0.0021 },
-      'mimo-v2.5': { input: 0.0007, output: 0.0021 },
-      'mimo-v2.5-pro': { input: 0.0007, output: 0.0021 },
-    },
-  },
   providers: {
     deepseek: { apiKey: '', baseUrl: null },
     kimi: { apiKey: '', baseUrl: null },

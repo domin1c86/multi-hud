@@ -1,0 +1,33 @@
+{
+  "type": "statusline",
+  "model": {
+    "id": "deepseek-v4-pro[1m]",
+    "display_name": "DeepSeek V4 Pro"
+  },
+  "context_window": {
+    "total_input_tokens": 800000,
+    "total_output_tokens": 50000,
+    "context_window_size": 1000000,
+    "used_percentage": 85.0,
+    "remaining_percentage": 15.0,
+    "current_usage": {
+      "input_tokens": 200000,
+      "output_tokens": 50000,
+      "cache_creation_input_tokens": 300000,
+      "cache_read_input_tokens": 300000
+    }
+  },
+  "cost": {
+    "total_cost_usd": 5.20,
+    "total_duration_ms": 600000,
+    "total_api_duration_ms": 200000,
+    "total_lines_added": 500,
+    "total_lines_removed": 100
+  },
+  "cwd": "D:/Coding/multi-hud",
+  "workspace": {
+    "current_dir": "D:/Coding/multi-hud",
+    "project_dir": "D:/Coding/multi-hud"
+  },
+  "session_id": "test-session-002"
+}

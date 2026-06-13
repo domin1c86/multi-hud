@@ -1,4 +1,4 @@
-import { ProviderAdapter, ProviderConfig } from '../types/index.js';
+import { ProviderAdapter, ProviderConfig, QuotaWindow, BalanceInfo } from '../types/index.js';
 
 export abstract class BaseProvider implements ProviderAdapter {
   abstract readonly name: string;
@@ -8,9 +8,13 @@ export abstract class BaseProvider implements ProviderAdapter {
     this.config = config;
   }
 
-  abstract getTokenUsage(): Promise<import('../types/index.js').TokenUsage | null>;
-  abstract getQuotas(): Promise<import('../types/index.js').QuotaWindow[] | null>;
-  abstract getContextLimit(modelId: string): Promise<number>;
+  async getQuotas(): Promise<QuotaWindow[] | null> {
+    return null;
+  }
+
+  async getBalance(): Promise<BalanceInfo | null> {
+    return null;
+  }
 
   async validateConfig(): Promise<boolean> {
     return !!this.config.apiKey;

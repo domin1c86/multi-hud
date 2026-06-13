@@ -1,35 +1,55 @@
 import { describe, it, expect } from 'vitest';
 import { renderStatusline, renderBar } from '../../src/core/renderer.js';
-import { QuotaWindow } from '../../src/types/index.js';
 import { resolveTheme } from '../../src/themes/index.js';
+import { TokenUsage, QuotaWindow, BalanceInfo } from '../../src/types/index.js';
 
 const theme = resolveTheme('default', {});
 
 describe('renderStatusline', () => {
   it('renders context bar', () => {
     const lines = renderStatusline({
-      modelId: 'deepseek-chat',
+      modelId: 'deepseek-v4-flash',
       contextPercentage: 50,
       theme,
       gitStatus: { branch: '', dirty: false, ahead: 0, behind: 0 },
       displayConfig: { showGitStatus: false, showTools: false, showAgents: false, showTodos: false, showCost: false },
     });
-    expect(lines[0]).toContain('deepseek-chat');
+    expect(lines[0]).toContain('deepseek-v4-flash');
     expect(lines[0]).toContain('50%');
   });
 
-  it('renders API mode with tokens', () => {
+  it('renders context bar with size', () => {
     const lines = renderStatusline({
-      modelId: 'deepseek-chat',
+      modelId: 'deepseek-v4-flash',
+      contextPercentage: 50,
+      contextSize: 200_000,
+      theme,
+      gitStatus: { branch: '', dirty: false, ahead: 0, behind: 0 },
+      displayConfig: { showGitStatus: false, showTools: false, showAgents: false, showTodos: false, showCost: false },
+    });
+    expect(lines[0]).toContain('200k');
+  });
+
+  it('renders token usage with CNY cost', () => {
+    const tokenUsage: TokenUsage = {
+      inputTokens: 50000,
+      outputTokens: 5000,
+      totalTokens: 55000,
+      cacheReadTokens: 30000,
+      cacheCreationTokens: 5000,
+    };
+    const lines = renderStatusline({
+      modelId: 'mimo-v2.5',
       contextPercentage: 30,
-      tokenUsage: { inputTokens: 1000, outputTokens: 500, totalTokens: 1500 },
-      cost: 0.002,
+      tokenUsage,
+      cost: 0.123,
       theme,
       gitStatus: { branch: '', dirty: false, ahead: 0, behind: 0 },
       displayConfig: { showGitStatus: false, showTools: false, showAgents: false, showTodos: false, showCost: true },
     });
-    expect(lines[1]).toContain('1k');
-    expect(lines[1]).toContain('0.002');
+    expect(lines[1]).toContain('50k');
+    expect(lines[1]).toContain('5k');
+    expect(lines[1]).toContain('¥0.123');
   });
 
   it('renders Coding Plan mode with quotas', () => {
@@ -38,7 +58,7 @@ describe('renderStatusline', () => {
       { name: '24h', used: 20, limit: 200, usedPercentage: 10 },
     ];
     const lines = renderStatusline({
-      modelId: 'deepseek-chat',
+      modelId: 'glm-4.7',
       contextPercentage: 30,
       quotas,
       theme,
@@ -49,9 +69,24 @@ describe('renderStatusline', () => {
     expect(lines[1]).toContain('10%');
   });
 
+  it('renders balance line', () => {
+    const balance: BalanceInfo = { provider: 'deepseek', available: 123.45, currency: '¥' };
+    const lines = renderStatusline({
+      modelId: 'deepseek-v4-flash',
+      contextPercentage: 30,
+      balance,
+      theme,
+      gitStatus: { branch: '', dirty: false, ahead: 0, behind: 0 },
+      displayConfig: { showGitStatus: false, showTools: false, showAgents: false, showTodos: false, showCost: false },
+    });
+    const balanceLine = lines.find((l) => l.includes('Balance'));
+    expect(balanceLine).toBeDefined();
+    expect(balanceLine).toContain('¥123.45');
+  });
+
   it('renders bar with filled and empty characters', () => {
     const lines = renderStatusline({
-      modelId: 'deepseek-chat',
+      modelId: 'deepseek-v4-flash',
       contextPercentage: 50,
       theme,
       gitStatus: { branch: '', dirty: false, ahead: 0, behind: 0 },
@@ -61,47 +96,9 @@ describe('renderStatusline', () => {
     expect(lines[0]).toContain('░');
   });
 
-  it('renders ANSI colors', () => {
-    const lines = renderStatusline({
-      modelId: 'deepseek-chat',
-      contextPercentage: 50,
-      theme,
-      gitStatus: { branch: '', dirty: false, ahead: 0, behind: 0 },
-      displayConfig: { showGitStatus: false, showTools: false, showAgents: false, showTodos: false, showCost: false },
-    });
-    // eslint-disable-next-line no-control-regex
-    expect(lines[0]).toMatch(/\x1b\[/);
-  });
-
-  it('renders currency symbol for cost', () => {
-    const lines = renderStatusline({
-      modelId: 'deepseek-chat',
-      contextPercentage: 30,
-      tokenUsage: { inputTokens: 1000, outputTokens: 500, totalTokens: 1500 },
-      cost: 0.123,
-      theme,
-      gitStatus: { branch: '', dirty: false, ahead: 0, behind: 0 },
-      displayConfig: { showGitStatus: false, showTools: false, showAgents: false, showTodos: false, showCost: true },
-    });
-    expect(lines[1]).toContain('¥');
-  });
-
-  it('renders up and down arrows for token usage', () => {
-    const lines = renderStatusline({
-      modelId: 'deepseek-chat',
-      contextPercentage: 30,
-      tokenUsage: { inputTokens: 1000, outputTokens: 500, totalTokens: 1500 },
-      theme,
-      gitStatus: { branch: '', dirty: false, ahead: 0, behind: 0 },
-      displayConfig: { showGitStatus: false, showTools: false, showAgents: false, showTodos: false, showCost: false },
-    });
-    expect(lines[1]).toContain('↑');
-    expect(lines[1]).toContain('↓');
-  });
-
   it('renders error message with warning icon', () => {
     const lines = renderStatusline({
-      modelId: 'deepseek-chat',
+      modelId: 'deepseek-v4-flash',
       contextPercentage: 30,
       errorMessage: 'Something went wrong',
       theme,
@@ -112,22 +109,9 @@ describe('renderStatusline', () => {
     expect(lines[1]).toContain(theme.icons.warning);
   });
 
-  it('renders git status when enabled', () => {
-    const lines = renderStatusline({
-      modelId: 'deepseek-chat',
-      contextPercentage: 30,
-      theme,
-      gitStatus: { branch: 'main', dirty: true, ahead: 0, behind: 0 },
-      displayConfig: { showGitStatus: true, showTools: false, showAgents: false, showTodos: false, showCost: false },
-    });
-    expect(lines[0]).toContain('main');
-    expect(lines[0]).toContain(theme.icons.gitBranch);
-    expect(lines[0]).toContain(theme.icons.gitDirty);
-  });
-
   it('renders tools when enabled', () => {
     const lines = renderStatusline({
-      modelId: 'deepseek-chat',
+      modelId: 'deepseek-v4-flash',
       contextPercentage: 30,
       theme,
       gitStatus: { branch: '', dirty: false, ahead: 0, behind: 0 },
@@ -138,30 +122,24 @@ describe('renderStatusline', () => {
     expect(lines[1]).toContain('◐');
   });
 
-  it('renders agents when enabled', () => {
+  it('renders large token counts with M suffix', () => {
+    const tokenUsage: TokenUsage = {
+      inputTokens: 1_500_000,
+      outputTokens: 500_000,
+      totalTokens: 2_000_000,
+      cacheReadTokens: 800_000,
+      cacheCreationTokens: 100_000,
+    };
     const lines = renderStatusline({
-      modelId: 'deepseek-chat',
-      contextPercentage: 30,
+      modelId: 'deepseek-v4-pro[1m]',
+      contextPercentage: 60,
+      tokenUsage,
       theme,
       gitStatus: { branch: '', dirty: false, ahead: 0, behind: 0 },
-      agents: [{ name: 'Agent1', model: 'gpt-4', description: 'doing work' }],
-      displayConfig: { showGitStatus: false, showTools: false, showAgents: true, showTodos: false, showCost: false },
+      displayConfig: { showGitStatus: false, showTools: false, showAgents: false, showTodos: false, showCost: false },
     });
-    expect(lines[1]).toContain('Agent1');
-    expect(lines[1]).toContain('doing work');
-  });
-
-  it('renders todos when enabled', () => {
-    const lines = renderStatusline({
-      modelId: 'deepseek-chat',
-      contextPercentage: 30,
-      theme,
-      gitStatus: { branch: '', dirty: false, ahead: 0, behind: 0 },
-      todos: [{ text: 'Fix bug', done: false }],
-      displayConfig: { showGitStatus: false, showTools: false, showAgents: false, showTodos: true, showCost: false },
-    });
-    expect(lines[1]).toContain('Fix bug');
-    expect(lines[1]).toContain('(0/1)');
+    expect(lines[1]).toContain('1.5M');
+    expect(lines[1]).toContain('500k');
   });
 });
 

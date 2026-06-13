@@ -1,14 +1,24 @@
-import { PricingConfig } from '../types/index.js';
+import { calculateCost as calcCost } from './pricing.js';
 
-export function calculateCost(
-  modelId: string,
-  inputTokens: number,
-  outputTokens: number,
-  pricing: PricingConfig,
-): number | null {
-  const modelPricing = pricing.models[modelId];
-  if (!modelPricing) return null;
-  const inputCost = (inputTokens * modelPricing.input) / 1000;
-  const outputCost = (outputTokens * modelPricing.output) / 1000;
-  return inputCost + outputCost;
+export interface CostInput {
+  modelId: string;
+  inputUncachedTokens: number;
+  cacheReadTokens: number;
+  cacheCreationTokens: number;
+  outputTokens: number;
+  contextTokens: number;
+}
+
+export { getModelPrice, calculateCost } from './pricing.js';
+
+/** Convenience wrapper that returns CNY cost from token breakdown. */
+export function computeSessionCost(input: CostInput): number | null {
+  return calcCost(
+    input.modelId,
+    input.inputUncachedTokens,
+    input.cacheReadTokens,
+    input.cacheCreationTokens,
+    input.outputTokens,
+    input.contextTokens,
+  );
 }

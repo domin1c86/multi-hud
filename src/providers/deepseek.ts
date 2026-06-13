@@ -1,26 +1,32 @@
 import { BaseProvider } from './base.js';
-import { TokenUsage, QuotaWindow } from '../types/index.js';
+import { BalanceInfo } from '../types/index.js';
+
+interface DeepSeekBalanceResponse {
+  is_available: boolean;
+  balance_infos: Array<{
+    currency: string;
+    total_balance: string;
+    granted_balance: string;
+    topped_up_balance: string;
+  }>;
+}
 
 export class DeepSeekProvider extends BaseProvider {
   readonly name = 'deepseek';
 
-  async getTokenUsage(): Promise<TokenUsage | null> {
-    // DeepSeek's /user/balance returns account balance (CNY), not token usage.
-    // There is no public API for per-request or aggregate token consumption.
-    return null;
-  }
-
-  async getQuotas(): Promise<QuotaWindow[] | null> {
-    // DeepSeek is pay-as-you-go only — no time-window quota system exists.
-    return null;
-  }
-
-  async getContextLimit(modelId: string): Promise<number> {
-    const limits: Record<string, number> = {
-      'deepseek-chat': 64000,
-      'deepseek-coder': 64000,
-      'deepseek-reasoner': 64000,
-    };
-    return limits[modelId] ?? 64000;
+  override async getBalance(): Promise<BalanceInfo | null> {
+    if (!this.config.apiKey) return null;
+    try {
+      const data = await this.fetchJson<DeepSeekBalanceResponse>('/user/balance');
+      const info = data.balance_infos?.[0];
+      if (!info) return null;
+      return {
+        provider: 'deepseek',
+        available: parseFloat(info.total_balance),
+        currency: info.currency === 'CNY' ? '¥' : '$',
+      };
+    } catch {
+      return null;
+    }
   }
 }

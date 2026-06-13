@@ -1,25 +1,29 @@
 import { BaseProvider } from './base.js';
-import { TokenUsage, QuotaWindow } from '../types/index.js';
+import { BalanceInfo } from '../types/index.js';
+
+interface KimiBalanceResponse {
+  code: number;
+  data: {
+    available_balance: number;
+    voucher_balance: number;
+    cash_balance: number;
+  };
+}
 
 export class KimiProvider extends BaseProvider {
   readonly name = 'kimi';
 
-  async getTokenUsage(): Promise<TokenUsage | null> {
-    // Kimi's /v1/users/me/balance returns account balance, not token usage.
-    // There is no public API for aggregate token consumption.
-    return null;
-  }
-
-  async getQuotas(): Promise<QuotaWindow[] | null> {
-    // Kimi Code Plan may have quota windows, but no public API endpoint is documented.
-    return null;
-  }
-
-  async getContextLimit(modelId: string): Promise<number> {
-    const limits: Record<string, number> = {
-      'kimi-latest': 256000,
-      'kimi-k1': 256000,
-    };
-    return limits[modelId] ?? 256000;
+  override async getBalance(): Promise<BalanceInfo | null> {
+    if (!this.config.apiKey) return null;
+    try {
+      const data = await this.fetchJson<KimiBalanceResponse>('/v1/users/me/balance');
+      return {
+        provider: 'kimi',
+        available: data.data.available_balance,
+        currency: '¥',
+      };
+    } catch {
+      return null;
+    }
   }
 }

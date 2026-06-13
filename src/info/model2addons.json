@@ -1,0 +1,14 @@
+{
+    "mimo": 0,
+    "kimi": 0,
+    "deepseek": 0,
+    "glm": {
+        "low": "context<32k",
+        "high": "context>=32k",
+        "medium": "context<32k && output>=0.2k"
+    },
+    "minimax": {
+        "low": "context<=512k",
+        "high": "context>512k"
+    }
+}
