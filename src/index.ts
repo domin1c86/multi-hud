@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import { loadConfig } from './core/config.js';
 import { renderStatusline } from './core/renderer.js';
 import { getGitStatus } from './core/git.js';

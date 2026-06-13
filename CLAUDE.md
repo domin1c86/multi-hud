@@ -25,32 +25,37 @@ This is a **Claude Code statusline plugin** — Claude Code launches it as a sub
 ### Data flow
 
 ```
-Claude Code stdin ──→ index.ts (JSONL parse loop)
-                        ├── statusline events → Engine → Provider API polling
-                        ├── transcript events → parseTranscript() (tools/agents/todos)
-                        └── both feed → renderStatusline() → stdout (ANSI lines)
+Claude Code stdin ──→ index.ts (reads single JSON object)
+                        ├── direct provider API calls (quotas/balance)
+                        ├── cost.ts → pricing.ts (model pricing + context limits)
+                        ├── git.ts (rev-parse, rev-list, status)
+                        └── renderer.ts → stdout (ANSI lines)
 ```
+
+Note: [src/core/engine.ts](src/core/engine.ts) (provider lifecycle/polling manager) and [src/core/transcript.ts](src/core/transcript.ts) (JSONL transcript parser) exist but are not yet wired into main() — provider calls and transcript state are handled inline for now.
 
 ### Key modules
 
-- **[src/index.ts](src/index.ts)** — Entry point. Reads JSONL from stdin, dispatches `statusline` events to engine/renderer and accumulates `transcript` events (sliding window of last 1000 lines, keeps 500 on trim).
-- **[src/core/engine.ts](src/core/engine.ts)** — Manages provider lifecycle: detects provider from model ID prefix (`deepseek`/`kimi`/`glm`/`minimax`/`mimo`), swaps adapters on change, starts `setInterval` polling, and populates a TTL in-memory cache.
-- **[src/core/cache.ts](src/core/cache.ts)** — Simple `Map<string, {value, expiresAt}>` TTL cache. Entries expire silently on `get()`. Used by the engine for `tokenUsage`, `quotas`, `contextLimit`, and `error` keys.
-- **[src/core/renderer.ts](src/core/renderer.ts)** — Pure function `renderStatusline()` that takes a `RenderInput` and returns `string[]` (one per output line). Produces up to 5 lines: model + git + context bar, quotas/tokens + cost, tools, agents, todos.
-- **[src/core/transcript.ts](src/core/transcript.ts)** — Parses Claude Code JSONL transcript events (`tool_start`, `tool_done`, `agent_start`, `agent_done`, `todo_add`, `todo_done`) into structured `{tools, agents, todos}` state. Only running agents are included in output.
-- **[src/core/git.ts](src/core/git.ts)** — Shells out to `git` (rev-parse, rev-list, status --porcelain). Accepts `exec` param for testability. Silent failure returns empty state.
-- **[src/core/cost.ts](src/core/cost.ts)** — Multiplies input/output tokens by per-model per-1K-token pricing rates. Returns `null` if the model has no pricing config.
+- **[src/index.ts](src/index.ts)** — Entry point. Reads a single JSON object from stdin (Claude Code sends one per invocation), detects the provider from `model.id` prefix, calls provider adapters directly for quotas/balance, computes cost, gets git status, and renders.
+- **[src/core/pricing.ts](src/core/pricing.ts)** — Built-in model pricing (CNY per 1M tokens), context window limits (tokens), and tier resolution. Functions: `parseModelId()` (handles `[1m]` suffix), `getContextLimit()`, `getModelPrice()`, `calculateCost()`. GLM tiers depend on context/output sizes; MiniMax tiers depend on context size.
+- **[src/core/cost.ts](src/core/cost.ts)** — Thin wrapper around `pricing.ts` that exposes `computeSessionCost()` for the main loop.
+- **[src/core/renderer.ts](src/core/renderer.ts)** — Pure function `renderStatusline()` that takes a `RenderInput` and returns `string[]` (one per output line). Produces up to 5 lines: model + git + context bar, quotas/tokens + cost, balance, tools, agents, todos.
 - **[src/core/config.ts](src/core/config.ts)** — Loads `~/.claude/plugins/multi-hud/config.json`, deep-merges with defaults. All config keys are optional — missing values fall through to `defaultConfig`.
+- **[src/core/git.ts](src/core/git.ts)** — Shells out to `git` (rev-parse, rev-list, status --porcelain). Accepts `exec` param for testability. Silent failure returns empty state.
+- **[src/core/engine.ts](src/core/engine.ts)** — Engine class with provider lifecycle management, setInterval polling, and TTL cache. Only GLM is pollable (quota API), only DeepSeek/Kimi have balance APIs. Not yet wired into `index.ts`.
+- **[src/core/cache.ts](src/core/cache.ts)** — Simple `Map<string, {value, expiresAt}>` TTL cache. Entries expire silently on `get()`. Used by the engine.
+- **[src/core/transcript.ts](src/core/transcript.ts)** — Parses Claude Code JSONL transcript events (`tool_start`, `tool_done`, `agent_start`, `agent_done`, `todo_add`, `todo_done`) into structured `{tools, agents, todos}` state. Only running agents are included in output. Not yet wired into `index.ts`.
 
 ### Provider adapter pattern
 
-All providers extend `BaseProvider` ([src/providers/base.ts](src/providers/base.ts)) which provides `fetchJson<T>(url, init?)` — a thin wrapper around `fetch()` that adds `Authorization: Bearer <apiKey>` and the provider's `baseUrl` prefix. Each concrete provider (DeepSeek, Kimi, GLM, MiniMax, MiMo) implements three methods:
+All providers extend `BaseProvider` ([src/providers/base.ts](src/providers/base.ts)) which provides `fetchJson<T>(url, init?)` — a thin wrapper around `fetch()` that adds `Authorization: Bearer <apiKey>` and the provider's `baseUrl` prefix. Each concrete provider (DeepSeek, Kimi, GLM, MiniMax, MiMo) implements:
 
-- `getTokenUsage()` → `TokenUsage | null` (input/output/total tokens)
-- `getQuotas()` → `QuotaWindow[] | null` (5h/24h/7d/30d windows with used/limit/percentage)
-- `getContextLimit(modelId)` → `number` (default 64000)
+- `name` — provider identifier string
+- `getQuotas()` → `QuotaWindow[] | null` (5h/24h/7d/30d windows with used/limit/percentage) — only GLM implements this
+- `getBalance()` → `BalanceInfo | null` — only DeepSeek and Kimi implement this
+- `validateConfig()` → `Promise<boolean>` — returns `true` if `apiKey` is set (overridden from base)
 
-Errors in API calls are caught and return `null` — the engine stores error strings in cache which the renderer displays on the second status line.
+Errors in API calls are caught and return `null` — the main loop stores error strings which the renderer displays on the second status line.
 
 ### Theme compilation pipeline
 
@@ -78,4 +83,4 @@ Users configure `customTheme` as a partial theme object in `config.json`. The me
 
 ### Testing
 
-20 test files, all vitest with `environment: 'node'` and `globals: true`. Tests mirror `src/` structure under `tests/`. Provider tests use `fetch` mocking. Config tests verify deep merge behavior. Compiler tests verify hex spec parsing and derivation math. Renderer tests verify output shape. Git tests pass a mock `exec` function. Each provider has its own test file.
+21 test files, all vitest with `environment: 'node'` and `globals: true`. Tests mirror `src/` structure under `tests/`. Provider tests use `fetch` mocking. Config tests verify deep merge behavior. Compiler tests verify hex spec parsing and derivation math. Renderer tests verify output shape. Git tests pass a mock `exec` function. Each provider has its own test file.
