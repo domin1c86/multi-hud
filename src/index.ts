@@ -3,14 +3,17 @@ import { loadConfig } from './core/config.js';
 import { renderStatusline } from './core/renderer.js';
 import { getGitStatus } from './core/git.js';
 import { computeSessionCost } from './core/cost.js';
-import { getContextLimit } from './core/pricing.js';
+import { getContextLimit, parseModelId } from './core/pricing.js';
+import { getMimoPlanLimit } from './core/credits.js';
+import { updateMimoCredits } from './core/state.js';
+import { resolveModelIdFromSettings } from './core/model-resolve.js';
 import { resolveTheme } from './themes/index.js';
 import { DeepSeekProvider } from './providers/deepseek.js';
 import { KimiProvider } from './providers/kimi.js';
 import { GlmProvider } from './providers/glm.js';
 import { MiniMaxProvider } from './providers/minimax.js';
 import { MiMoProvider } from './providers/mimo.js';
-import type { MultiHudConfig, ProviderAdapter, BalanceInfo, QuotaWindow, TokenUsage } from './types/index.js';
+import type { MultiHudConfig, ProviderAdapter, BalanceInfo, QuotaWindow, TokenUsage, MimoProviderConfig } from './types/index.js';
 import type { StatuslineEvent } from './types/statusline.js';
 import os from 'os';
 import path from 'path';
@@ -68,11 +71,16 @@ export async function main(): Promise<void> {
   }
 
   // Model ID and provider detection
-  const rawModelId = evt.model?.id || '';
-  const providerName = detectProvider(rawModelId, config);
+  // 1. Resolve cc-switch routing: if model.id starts with "claude-", read settings.json for the real model name
+  const resolvedModelId = resolveModelIdFromSettings(evt.model?.id || '');
+  // 2. Parse the resolved ID: strip [1m]/[1M]/[200k] suffixes, extract provider prefix
+  const parsed = parseModelId(resolvedModelId);
+  const providerName = detectProvider(parsed.modelId, config);
+  // 3. Display name is the clean model ID (no suffixes)
+  const displayModelId = parsed.modelId;
 
   // Context data from Claude Code
-  const ctxSize = evt.context_window?.context_window_size ?? getContextLimit(rawModelId);
+  const ctxSize = evt.context_window?.context_window_size ?? getContextLimit(resolvedModelId);
   const usedPct = evt.context_window?.used_percentage ?? 0;
   const contextPercentage = Math.min(100, usedPct);
 
@@ -97,9 +105,9 @@ export async function main(): Promise<void> {
 
   // Cost calculation using built-in pricing
   let cost: number | null = null;
-  if (config.display.showCost && rawModelId) {
+  if (config.display.showCost && resolvedModelId) {
     cost = computeSessionCost({
-      modelId: rawModelId,
+      modelId: resolvedModelId,
       inputUncachedTokens: inputUncached,
       cacheReadTokens: cacheRead,
       cacheCreationTokens: cacheCreation,
@@ -111,6 +119,7 @@ export async function main(): Promise<void> {
   // Quota/balance data from provider API (best-effort, read from cache file)
   let quotas: QuotaWindow[] | undefined;
   let balance: BalanceInfo | undefined;
+  let sessionCredits: number | undefined;
   let errorMessage: string | undefined;
 
   if (providerName) {
@@ -127,17 +136,41 @@ export async function main(): Promise<void> {
     }
   }
 
+  // MiMo credit-based quota tracking (no API — computed locally)
+  if (providerName === 'mimo' && parsed.modelId && tokenUsage) {
+    const mimoConfig = config.providers.mimo as MimoProviderConfig;
+    const plan = mimoConfig.plan || 'standard';
+    try {
+      const result = updateMimoCredits(CONFIG_DIR, evt.session_id || '', parsed.modelId, {
+        inputUncached: inputUncached,
+        cacheRead: cacheRead,
+        cacheCreation: cacheCreation,
+        output: totalOutput,
+      }, plan);
+      if (result) {
+        const planLimit = getMimoPlanLimit(plan);
+        quotas = [
+          { name: '30d', used: result.totalCredits, limit: planLimit, usedPercentage: result.monthlyPercentage },
+        ];
+        sessionCredits = result.sessionCredits;
+      }
+    } catch {
+      // Credit tracking failure is non-fatal
+    }
+  }
+
   // Git status
   const gitStatus = config.display.showGitStatus
     ? getGitStatus(evt.cwd || process.cwd())
     : { branch: '', dirty: false, ahead: 0, behind: 0 };
 
   const renderLines = renderStatusline({
-    modelId: rawModelId,
+    modelId: displayModelId,
     contextPercentage,
     contextSize: ctxSize,
     tokenUsage,
     quotas,
+    sessionCredits,
     balance,
     cost,
     theme,

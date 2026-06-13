@@ -16,6 +16,19 @@ describe('parseModelId', () => {
     expect(result.oneMCtx).toBe(true);
   });
 
+  it('strips multiple [1m] suffixes', () => {
+    const result = parseModelId('mimo-v2.5-pro[1m][1M]');
+    expect(result.modelId).toBe('mimo-v2.5-pro');
+    expect(result.provider).toBe('mimo');
+    expect(result.oneMCtx).toBe(true);
+  });
+
+  it('strips [1m] case-insensitively', () => {
+    const result = parseModelId('deepseek-v4-flash[1M]');
+    expect(result.modelId).toBe('deepseek-v4-flash');
+    expect(result.oneMCtx).toBe(true);
+  });
+
   it('parses a model ID with multiple dashes', () => {
     const result = parseModelId('glm-4.6v-flashx');
     expect(result.modelId).toBe('glm-4.6v-flashx');

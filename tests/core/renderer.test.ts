@@ -69,6 +69,40 @@ describe('renderStatusline', () => {
     expect(lines[1]).toContain('10%');
   });
 
+  it('renders sessionCredits alongside quotas', () => {
+    const quotas: QuotaWindow[] = [
+      { name: '30d', used: 500, limit: 11000, usedPercentage: 4.5 },
+    ];
+    const lines = renderStatusline({
+      modelId: 'mimo-v2.5',
+      contextPercentage: 30,
+      quotas,
+      sessionCredits: 520,
+      theme,
+      gitStatus: { branch: '', dirty: false, ahead: 0, behind: 0 },
+      displayConfig: { showGitStatus: false, showTools: false, showAgents: false, showTodos: false, showCost: false },
+    });
+    expect(lines[1]).toContain('30d');
+    expect(lines[1]).toContain('4.5%');
+    expect(lines[1]).toContain('520cr');
+  });
+
+  it('renders sessionCredits with decimal', () => {
+    const quotas: QuotaWindow[] = [
+      { name: '30d', used: 500, limit: 11000, usedPercentage: 4.5 },
+    ];
+    const lines = renderStatusline({
+      modelId: 'mimo-v2.5',
+      contextPercentage: 30,
+      quotas,
+      sessionCredits: 52.7,
+      theme,
+      gitStatus: { branch: '', dirty: false, ahead: 0, behind: 0 },
+      displayConfig: { showGitStatus: false, showTools: false, showAgents: false, showTodos: false, showCost: false },
+    });
+    expect(lines[1]).toContain('52.7cr');
+  });
+
   it('renders balance line', () => {
     const balance: BalanceInfo = { provider: 'deepseek', available: 123.45, currency: '¥' };
     const lines = renderStatusline({

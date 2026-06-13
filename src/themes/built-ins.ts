@@ -30,6 +30,7 @@ export const builtInThemes: Record<string, Theme> = {
       quota24h: { ...defaultBarStyle, fgColor: '#2196f3' },
       quota7d: { ...defaultBarStyle, fgColor: '#e91e63' },
       quota30d: { ...defaultBarStyle, fgColor: '#00bcd4' },
+      quotaWeekly: { ...defaultBarStyle, fgColor: '#9c27b0' },
     },
     icons: {
       deepseek: '🔥',
@@ -90,6 +91,11 @@ export const builtInThemes: Record<string, Theme> = {
         bgColor: '[#000000]',
         animation: { enabled: false, mode: 'on-change' as const, type: 'none' as const, triggerThreshold: 5 },
       },
+      quotaWeekly: {
+        fgColor: '#e5e5e5',
+        bgColor: '[#000000]',
+        animation: { enabled: false, mode: 'on-change' as const, type: 'none' as const, triggerThreshold: 5 },
+      },
     },
     icons: {
       warning: '!',
@@ -125,6 +131,7 @@ export const builtInThemes: Record<string, Theme> = {
       quota24h: { ...defaultBarStyle, fgColor: '#2196f3' },
       quota7d: { ...defaultBarStyle, fgColor: '#e91e63' },
       quota30d: { ...defaultBarStyle, fgColor: '#00bcd4' },
+      quotaWeekly: { ...defaultBarStyle, fgColor: '#9c27b0' },
     },
     icons: {
       deepseek: 'DS',
@@ -182,6 +189,11 @@ export const builtInThemes: Record<string, Theme> = {
       },
       quota30d: {
         fgColor: '#29b8db',
+        bgColor: '[#000000]',
+        animation: { enabled: false, mode: 'on-change' as const, type: 'none' as const, triggerThreshold: 5 },
+      },
+      quotaWeekly: {
+        fgColor: '#ea80fc',
         bgColor: '[#000000]',
         animation: { enabled: false, mode: 'on-change' as const, type: 'none' as const, triggerThreshold: 5 },
       },

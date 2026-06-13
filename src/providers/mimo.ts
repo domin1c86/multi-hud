@@ -1,7 +1,16 @@
 import { BaseProvider } from './base.js';
+import type { MimoProviderConfig } from '../types/index.js';
 
 export class MiMoProvider extends BaseProvider {
   readonly name = 'mimo';
-  // No public API for balance, usage, or quotas.
-  // All data comes from Claude Code statusline events.
+  protected mimoConfig: MimoProviderConfig;
+
+  constructor(config: MimoProviderConfig) {
+    super(config);
+    this.mimoConfig = config;
+  }
+
+  override async validateConfig(): Promise<boolean> {
+    return !!this.config.apiKey || !!this.mimoConfig.plan;
+  }
 }

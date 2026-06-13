@@ -10,11 +10,11 @@ const config: MultiHudConfig = {
   animations: { enabled: false, defaultMode: 'on-change', defaultType: 'none', triggerThreshold: 5 },
   display: { showGitStatus: false, showTools: false, showAgents: false, showTodos: false, showCost: false },
   providers: {
-    deepseek: { apiKey: '', baseUrl: null },
-    kimi: { apiKey: '', baseUrl: null },
-    glm: { apiKey: '', baseUrl: null },
-    minimax: { apiKey: '', baseUrl: null },
-    mimo: { apiKey: '', baseUrl: null },
+    deepseek: { apiKey: '', baseUrl: null, codingPlanBaseUrl: null, region: null },
+    kimi: { apiKey: '', baseUrl: null, codingPlanBaseUrl: null, region: null },
+    glm: { apiKey: '', baseUrl: null, codingPlanBaseUrl: null, region: null },
+    minimax: { apiKey: '', baseUrl: null, codingPlanBaseUrl: null, region: null },
+    mimo: { apiKey: '', baseUrl: null, codingPlanBaseUrl: null, region: null },
   },
 };
 

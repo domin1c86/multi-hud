@@ -58,10 +58,10 @@ Config file: `~/.claude/plugins/multi-hud/config.json`. Created automatically on
   },
   "providers": {
     "deepseek": { "apiKey": "sk-xxx", "baseUrl": null },
-    "kimi": { "apiKey": "sk-xxx", "baseUrl": null },
-    "glm": { "apiKey": "sk-xxx", "baseUrl": null },
-    "minimax": { "apiKey": "sk-xxx", "baseUrl": null },
-    "mimo": { "apiKey": "", "baseUrl": null }
+    "kimi": { "apiKey": "sk-xxx", "baseUrl": null, "codingPlanBaseUrl": null },
+    "glm": { "apiKey": "sk-xxx", "baseUrl": null, "region": null },
+    "minimax": { "apiKey": "sk-xxx", "baseUrl": null, "region": null },
+    "mimo": { "apiKey": "", "baseUrl": null, "plan": null }
   }
 }
 ```
@@ -75,16 +75,19 @@ Config file: `~/.claude/plugins/multi-hud/config.json`. Created automatically on
 | `theme` | `string` | `"default"` | Theme: `default`, `minimal`, `powerline`, or `neon` |
 | `customTheme` | `object` | `{}` | Theme overrides (see below) |
 | `display.*` | `boolean` | `true` | Toggle each status line |
+| `providers.*.codingPlanBaseUrl` | `string \| null` | `null` | Override base URL for Coding Plan quota API (Kimi) |
+| `providers.*.region` | `"cn" \| "intl" \| null` | `null` | Region for providers with CN/intl endpoints (GLM, MiniMax) |
+| `providers.*.plan` | `"lite" \| "standard" \| "pro" \| "max" \| null` | `null` | MiMo plan tier for monthly credit limit (lite=4.1K, standard=11K, pro=38K, max=82K credits in millions) |
 
 ### Provider API support
 
 | Provider | Quota polling | Balance polling |
 |----------|---------------|-----------------|
 | DeepSeek | — | Yes |
-| Kimi | — | Yes |
+| Kimi | Yes (Coding Plan) | Yes (pay-per-token) |
 | GLM | Yes | — |
-| MiniMax | — | — |
-| MiMo | — | — |
+| MiniMax | Yes (Coding Plan) | — |
+| MiMo | — | — (local credit tracking) |
 
 Only providers with a configured API key are queried. API failures fail silently.
 

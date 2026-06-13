@@ -20,11 +20,11 @@ export const defaultConfig: MultiHudConfig = {
     showCost: true,
   },
   providers: {
-    deepseek: { apiKey: '', baseUrl: null },
-    kimi: { apiKey: '', baseUrl: null },
-    glm: { apiKey: '', baseUrl: null },
-    minimax: { apiKey: '', baseUrl: null },
-    mimo: { apiKey: '', baseUrl: null },
+    deepseek: { apiKey: '', baseUrl: null, codingPlanBaseUrl: null, region: null },
+    kimi: { apiKey: '', baseUrl: null, codingPlanBaseUrl: null, region: null },
+    glm: { apiKey: '', baseUrl: null, codingPlanBaseUrl: null, region: null },
+    minimax: { apiKey: '', baseUrl: null, codingPlanBaseUrl: null, region: null },
+    mimo: { apiKey: '', baseUrl: null, codingPlanBaseUrl: null, region: null, plan: null },
   },
 };
 

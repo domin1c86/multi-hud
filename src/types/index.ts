@@ -7,7 +7,7 @@ export interface TokenUsage {
 }
 
 export interface QuotaWindow {
-  name: '5h' | '24h' | '7d' | '30d';
+  name: '5h' | '24h' | '7d' | '30d' | 'weekly';
   used: number;
   limit: number;
   usedPercentage: number;
@@ -65,6 +65,7 @@ export interface Theme {
     quota24h: BarStyle;
     quota7d: BarStyle;
     quota30d: BarStyle;
+    quotaWeekly: BarStyle;
   };
   icons: {
     deepseek?: string;
@@ -90,6 +91,12 @@ export interface Theme {
 export interface ProviderConfig {
   apiKey: string;
   baseUrl: string | null;
+  codingPlanBaseUrl: string | null;
+  region: 'cn' | 'intl' | null;
+}
+
+export interface MimoProviderConfig extends ProviderConfig {
+  plan: 'lite' | 'standard' | 'pro' | 'max' | null;
 }
 
 export interface MultiHudConfig {
@@ -115,6 +122,6 @@ export interface MultiHudConfig {
     kimi: ProviderConfig;
     glm: ProviderConfig;
     minimax: ProviderConfig;
-    mimo: ProviderConfig;
+    mimo: MimoProviderConfig;
   };
 }

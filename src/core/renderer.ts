@@ -8,6 +8,7 @@ export interface RenderInput {
   contextSize?: number;
   tokenUsage?: TokenUsage | null;
   quotas?: QuotaWindow[] | null;
+  sessionCredits?: number | null;
   balance?: BalanceInfo | null;
   cost?: number | null;
   theme: Theme;
@@ -63,7 +64,11 @@ export function renderStatusline(input: RenderInput): string[] {
       const bar = barStyle ? renderBar(q.usedPercentage, barStyle.fgColor, barStyle.bgColor, t.layout.barWidth) : '';
       return `${t.colors.label}${q.name}${reset} ${bar} ${q.usedPercentage}%`;
     });
-    lines.push(parts.join(' │ '));
+    let line2 = parts.join(' │ ');
+    if (input.sessionCredits != null) {
+      line2 += ` │ ${t.colors.label}${(input.sessionCredits % 1 === 0 ? input.sessionCredits.toFixed(0) : input.sessionCredits.toFixed(1))}cr${reset}`;
+    }
+    lines.push(line2);
   } else if (input.tokenUsage) {
     const inputStr = formatTokens(input.tokenUsage.inputTokens);
     const outputStr = formatTokens(input.tokenUsage.outputTokens);

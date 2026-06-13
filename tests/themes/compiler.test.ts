@@ -223,6 +223,11 @@ describe('compileTheme', () => {
           bgColor: '[#000000]',
           animation: { enabled: false, mode: 'on-change' as const, type: 'none' as const, triggerThreshold: 5 },
         },
+        quotaWeekly: {
+          fgColor: '#9c27b0',
+          bgColor: '[#000000]',
+          animation: { enabled: false, mode: 'on-change' as const, type: 'none' as const, triggerThreshold: 5 },
+        },
       },
       icons: builtInThemes.default.icons,
       layout: builtInThemes.default.layout,
@@ -278,6 +283,11 @@ describe('compileTheme', () => {
         },
         quota30d: {
           fgColor: '\x1b[36m',
+          bgColor: '\x1b[40m',
+          animation: { enabled: false, mode: 'on-change' as const, type: 'none' as const, triggerThreshold: 5 },
+        },
+        quotaWeekly: {
+          fgColor: '\x1b[35m',
           bgColor: '\x1b[40m',
           animation: { enabled: false, mode: 'on-change' as const, type: 'none' as const, triggerThreshold: 5 },
         },

@@ -20,7 +20,7 @@ Prettier: single quotes, trailing commas, semicolons, 120-char print width, 2-sp
 
 ## Architecture
 
-This is a **Claude Code statusline plugin** — Claude Code launches it as a subprocess, streams `statusline` and `transcript` JSON events on stdin, and the plugin writes ANSI-escaped status lines to stdout. There is no server, no HTTP listener, no persistent process outside Claude Code.
+This is a **Claude Code statusline plugin** — Claude Code launches it as a subprocess, streams `statusline` and `transcript` JSON events on stdin, and the plugin writes ANSI-escaped status lines to stdout. There is no server, no HTTP listener, no persistent process outside Claude Code. The entry point (`src/index.ts`) reads exactly **one** JSON object from stdin per invocation.
 
 ### Data flow
 
@@ -28,34 +28,47 @@ This is a **Claude Code statusline plugin** — Claude Code launches it as a sub
 Claude Code stdin ──→ index.ts (reads single JSON object)
                         ├── direct provider API calls (quotas/balance)
                         ├── cost.ts → pricing.ts (model pricing + context limits)
+                        ├── credits.ts → mimo2credits.json (MiMo credit pricing)
+                        ├── state.ts (MiMo credit state persistence across invocations)
                         ├── git.ts (rev-parse, rev-list, status)
                         └── renderer.ts → stdout (ANSI lines)
 ```
 
-Note: [src/core/engine.ts](src/core/engine.ts) (provider lifecycle/polling manager) and [src/core/transcript.ts](src/core/transcript.ts) (JSONL transcript parser) exist but are not yet wired into main() — provider calls and transcript state are handled inline for now.
+Note: [src/core/engine.ts](src/core/engine.ts) (provider lifecycle/polling manager) and [src/core/transcript.ts](src/core/transcript.ts) (JSONL transcript parser) exist but are not yet wired into main() — provider calls are made directly via `getProviderAdapter()`, and `tools`/`agents`/`todos` are passed as empty arrays to the renderer. The Engine and Transcript modules are ready for future integration.
 
 ### Key modules
 
-- **[src/index.ts](src/index.ts)** — Entry point. Reads a single JSON object from stdin (Claude Code sends one per invocation), detects the provider from `model.id` prefix, calls provider adapters directly for quotas/balance, computes cost, gets git status, and renders.
-- **[src/core/pricing.ts](src/core/pricing.ts)** — Built-in model pricing (CNY per 1M tokens), context window limits (tokens), and tier resolution. Functions: `parseModelId()` (handles `[1m]` suffix), `getContextLimit()`, `getModelPrice()`, `calculateCost()`. GLM tiers depend on context/output sizes; MiniMax tiers depend on context size.
+- **[src/index.ts](src/index.ts)** — Entry point. Reads a single JSON object from stdin (Claude Code sends one per invocation), resolves the real model ID (handling cc-switch routing via settings.json), detects the provider from model ID prefix, calls provider adapters directly for quotas/balance, computes cost, gets git status, and renders.
+- **[src/core/pricing.ts](src/core/pricing.ts)** — Built-in model pricing (CNY per 1M tokens), context window limits (tokens), and tier resolution. Functions: `parseModelId()` (strips all `[1m]`/`[1M]`/`[200k]` suffixes), `getContextLimit()`, `getModelPrice()`, `calculateCost()`. GLM tiers depend on context/output sizes; MiniMax tiers depend on context size.
+- **[src/core/model-resolve.ts](src/core/model-resolve.ts)** — Resolves the real provider model ID when cc-switch routing is active. When `model.id` starts with `claude-`, reads `ANTHROPIC_DEFAULT_{TIER}_MODEL_NAME` from `~/.claude/settings.json` to find the actual model name (e.g., `glm-5.1`). Non-claude model IDs pass through unchanged.
 - **[src/core/cost.ts](src/core/cost.ts)** — Thin wrapper around `pricing.ts` that exposes `computeSessionCost()` for the main loop.
-- **[src/core/renderer.ts](src/core/renderer.ts)** — Pure function `renderStatusline()` that takes a `RenderInput` and returns `string[]` (one per output line). Produces up to 5 lines: model + git + context bar, quotas/tokens + cost, balance, tools, agents, todos.
-- **[src/core/config.ts](src/core/config.ts)** — Loads `~/.claude/plugins/multi-hud/config.json`, deep-merges with defaults. All config keys are optional — missing values fall through to `defaultConfig`.
+- **[src/core/renderer.ts](src/core/renderer.ts)** — Pure function `renderStatusline()` that takes a `RenderInput` and returns `string[]` (one per output line). Produces up to 5 lines: model + git + context bar, quotas/tokens + cost, balance, tools, agents, todos. Bars use `renderBar()` with █/░ characters and ANSI color escapes.
+- **[src/core/config.ts](src/core/config.ts)** — Loads `~/.claude/plugins/multi-hud/config.json`, deep-merges with defaults using recursive `Object.assign`. All config keys are optional — missing values fall through to `defaultConfig`. The config directory is auto-created on startup if missing.
 - **[src/core/git.ts](src/core/git.ts)** — Shells out to `git` (rev-parse, rev-list, status --porcelain). Accepts `exec` param for testability. Silent failure returns empty state.
-- **[src/core/engine.ts](src/core/engine.ts)** — Engine class with provider lifecycle management, setInterval polling, and TTL cache. Only GLM is pollable (quota API), only DeepSeek/Kimi have balance APIs. Not yet wired into `index.ts`.
+- **[src/core/engine.ts](src/core/engine.ts)** — Engine class with provider lifecycle management, setInterval polling, and TTL cache. GLM and Kimi/MiniMax are pollable (quota APIs), DeepSeek/Kimi have balance APIs. Not yet wired into `index.ts`.
 - **[src/core/cache.ts](src/core/cache.ts)** — Simple `Map<string, {value, expiresAt}>` TTL cache. Entries expire silently on `get()`. Used by the engine.
+- **[src/core/credits.ts](src/core/credits.ts)** — MiMo credit pricing lookup and computation. Reads `src/info/mimo2credits.json` for per-model credit rates and plan limits. Exports `getMimoCreditPrice()`, `getMimoPlanLimit()`, `computeMimoCredits()`.
+- **[src/core/state.ts](src/core/state.ts)** — MiMo credit state persistence. Manages `mimo-state.json` in the config directory for cross-invocation cumulative tracking. Handles session dedup (by `session_id`), 30-day period rollover, and plan-based percentage calculation.
 - **[src/core/transcript.ts](src/core/transcript.ts)** — Parses Claude Code JSONL transcript events (`tool_start`, `tool_done`, `agent_start`, `agent_done`, `todo_add`, `todo_done`) into structured `{tools, agents, todos}` state. Only running agents are included in output. Not yet wired into `index.ts`.
 
 ### Provider adapter pattern
 
-All providers extend `BaseProvider` ([src/providers/base.ts](src/providers/base.ts)) which provides `fetchJson<T>(url, init?)` — a thin wrapper around `fetch()` that adds `Authorization: Bearer <apiKey>` and the provider's `baseUrl` prefix. Each concrete provider (DeepSeek, Kimi, GLM, MiniMax, MiMo) implements:
+All providers extend `BaseProvider` ([src/providers/base.ts](src/providers/base.ts)) which provides `fetchJson<T>(url, init?, overrideBaseUrl?)` — a thin wrapper around `fetch()` that adds `Authorization: Bearer <apiKey>` and the provider's `baseUrl` prefix. The `overrideBaseUrl` parameter lets providers call endpoints on a different domain (used by Kimi's Coding Plan quota API). Callers can override the `Authorization` header by passing it in `init.headers` — this is used by GLM which sends the raw API key without the `Bearer` prefix. Each concrete provider implements:
 
 - `name` — provider identifier string
-- `getQuotas()` → `QuotaWindow[] | null` (5h/24h/7d/30d windows with used/limit/percentage) — only GLM implements this
-- `getBalance()` → `BalanceInfo | null` — only DeepSeek and Kimi implement this
+- `getQuotas()` → `QuotaWindow[] | null` (quota windows with used/limit/percentage) — GLM, Kimi, and MiniMax implement this
+- `getBalance()` → `BalanceInfo | null` — DeepSeek and Kimi implement this
 - `validateConfig()` → `Promise<boolean>` — returns `true` if `apiKey` is set (overridden from base)
 
+Kimi has two API surfaces: the Moonshot pay-per-token API (`baseUrl`) for balance, and the Coding Plan API (`codingPlanBaseUrl`, defaults to `https://api.kimi.com`) for quotas. GLM and MiniMax use `region` config (`'cn'` or `'intl'`) to select between CN and international endpoints: GLM defaults to `https://open.bigmodel.cn` (CN) and `https://api.z.ai` (intl); MiniMax defaults to `https://api.minimaxi.com` (CN) and `https://api.minimax.io` (intl). GLM sends its API key without the `Bearer` prefix, unlike other providers.
+
+MiMo has no public quota API. Instead, credit consumption is computed locally from token usage data (provided by Claude Code on stdin) against pricing tables in `src/info/mimo2credits.json`. Cumulative monthly consumption is persisted across plugin invocations in `~/.claude/plugins/multi-hud/mimo-state.json`, with session deduplication by `session_id` and 30-day period auto-rollover. The `plan` config field (`'lite' | 'standard' | 'pro' | 'max'`) determines the monthly credit limit. Users can calibrate by deleting or editing the state file.
+
 Errors in API calls are caught and return `null` — the main loop stores error strings which the renderer displays on the second status line.
+
+### Type system
+
+All shared types live in [src/types/index.ts](src/types/index.ts) (domain types) and [src/types/statusline.ts](src/types/statusline.ts) (Claude Code event schemas). Key types: `MultiHudConfig` (full config shape with nested `providers`, `display`, `animations`), `ProviderAdapter` (the interface each provider implements), `MimoProviderConfig` (extends `ProviderConfig` with `plan` field for credit tracking), `Theme` (colors/icons/bars/layout), `TokenUsage`, `QuotaWindow`, `BalanceInfo`. The `StatuslineEvent` type mirrors what Claude Code sends on stdin; `ProviderConfig` holds `apiKey`, optional `baseUrl`, optional `codingPlanBaseUrl` (for Kimi's separate Coding Plan API), and optional `region` (for GLM and MiniMax CN/intl endpoint selection).
 
 ### Theme compilation pipeline
 
@@ -83,4 +96,4 @@ Users configure `customTheme` as a partial theme object in `config.json`. The me
 
 ### Testing
 
-21 test files, all vitest with `environment: 'node'` and `globals: true`. Tests mirror `src/` structure under `tests/`. Provider tests use `fetch` mocking. Config tests verify deep merge behavior. Compiler tests verify hex spec parsing and derivation math. Renderer tests verify output shape. Git tests pass a mock `exec` function. Each provider has its own test file.
+24 test files, all vitest with `environment: 'node'`, `globals: true`, and `pool: 'forks'`. Tests mirror `src/` structure under `tests/`. Provider tests use `fetch` mocking. Config tests verify deep merge behavior. Compiler tests verify hex spec parsing and derivation math. Renderer tests verify output shape (including sessionCredits rendering). Credit/state tests use temp directories for file persistence. Git tests pass a mock `exec` function. Model-resolve tests use temp directories for settings.json. Each provider has its own test file.

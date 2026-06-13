@@ -180,17 +180,21 @@ export interface ParsedModelId {
 
 /**
  * Parse a model ID like "deepseek-v4-pro[1m]" into its components.
- * Strips the [1m] suffix and extracts the provider prefix.
+ * Strips all [1m]/[1M]/[200k] suffixes and extracts the provider prefix.
  */
 export function parseModelId(rawModelId: string): ParsedModelId {
   let modelId = rawModelId;
   let oneMCtx = false;
 
-  const match = rawModelId.match(/^(.+)\[(\d+)([km])\]$/);
-  if (match) {
-    modelId = match[1];
-    oneMCtx = true;
+  // Strip all [1m], [1M], [200k], etc. suffixes
+  const suffixRegex = /\[(\d+)([km])\]/gi;
+  let match: RegExpExecArray | null;
+  while ((match = suffixRegex.exec(modelId)) !== null) {
+    const sizeNum = parseInt(match[1], 10);
+    const unit = match[2].toLowerCase();
+    if (unit === 'm' && sizeNum >= 1) oneMCtx = true;
   }
+  modelId = rawModelId.replace(/\[\d+[km]\]/gi, '');
 
   const dashIdx = modelId.indexOf('-');
   const provider = dashIdx > 0 ? modelId.substring(0, dashIdx) : modelId;

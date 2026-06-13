@@ -20,8 +20,8 @@ export abstract class BaseProvider implements ProviderAdapter {
     return !!this.config.apiKey;
   }
 
-  protected async fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
-    const base = this.config.baseUrl ?? '';
+  protected async fetchJson<T>(url: string, init?: RequestInit, overrideBaseUrl?: string): Promise<T> {
+    const base = overrideBaseUrl ?? this.config.baseUrl ?? '';
     const response = await fetch(base + url, {
       ...init,
       headers: {

@@ -1,11 +1,13 @@
 import { BaseProvider } from './base.js';
 import { QuotaWindow } from '../types/index.js';
 
+const GLM_BASE_URL_CN = 'https://open.bigmodel.cn';
+const GLM_BASE_URL_INTL = 'https://api.z.ai';
+
 interface GLMLimitItem {
   type: 'TIME_LIMIT' | 'TOKENS_LIMIT';
   unit: number;
   percentage: number;
-  number?: number;
   nextResetTime?: number;
 }
 
@@ -18,9 +20,8 @@ interface GLMQuotaResponse {
 }
 
 const UNIT_NAME: Record<number, QuotaWindow['name']> = {
-  5: '5h',
-  6: '7d',
-  3: '30d',
+  3: '5h',
+  6: 'weekly',
 };
 
 export class GlmProvider extends BaseProvider {
@@ -29,7 +30,17 @@ export class GlmProvider extends BaseProvider {
   override async getQuotas(): Promise<QuotaWindow[] | null> {
     if (!this.config.apiKey) return null;
     try {
-      const data = await this.fetchJson<GLMQuotaResponse>('/api/monitor/usage/quota/limit');
+      const base =
+        this.config.baseUrl ?? (this.config.region === 'intl' ? GLM_BASE_URL_INTL : GLM_BASE_URL_CN);
+      // GLM uses raw API key without Bearer prefix
+      const data = await this.fetchJson<GLMQuotaResponse>(
+        '/api/monitor/usage/quota/limit',
+        {
+          headers: { Authorization: this.config.apiKey },
+        },
+        base,
+      );
+
       if (!data.success) return null;
 
       return data.data.limits

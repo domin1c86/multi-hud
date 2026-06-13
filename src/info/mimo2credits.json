@@ -1,0 +1,24 @@
+{
+    "plan": {
+        "lite": 4100,
+        "standard": 11000,
+        "pro": 38000,
+        "max": 82000
+    },
+    "price": {
+        "mimo-v2.5": {
+            "input": 2,
+            "input_uncached": 100,
+            "output": 200
+        },
+        "mimo-v2.5-pro": {
+            "input": 2.5,
+            "input_uncached": 300,
+            "output": 600
+        },"mimo-v2.5-pro-ultraspeed": {
+            "input": 7.5,
+            "input_uncached": 900,
+            "output": 1800
+        }
+    }
+}

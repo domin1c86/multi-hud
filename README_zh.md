@@ -2,7 +2,7 @@
 
 [English](README.md) | 简体中文
 
-Claude Code 状态栏插件，支持 DeepSeek、Kimi、GLM、MiniMax、MiMo 第三方中文 LLM 提供商的实时用量监控和成本估算。
+Claude Code 状态栏插件，支持 DeepSeek、Kimi、GLM、MiniMax、MiMo 等中国 LLM 提供商的实时用量监控和成本估算。
 
 灵感来自社区插件 [claude-hud](https://github.com/asilvadesigns/claude-hud)，针对第三方提供商的计费模式（API 按量计费 vs Coding Plan 时间窗口配额）进行了适配。
 
@@ -58,10 +58,10 @@ New-Item -ItemType SymbolicLink -Path "$env:USERPROFILE\.claude\plugins\multi-hu
   },
   "providers": {
     "deepseek": { "apiKey": "sk-xxx", "baseUrl": null },
-    "kimi": { "apiKey": "sk-xxx", "baseUrl": null },
-    "glm": { "apiKey": "sk-xxx", "baseUrl": null },
-    "minimax": { "apiKey": "sk-xxx", "baseUrl": null },
-    "mimo": { "apiKey": "", "baseUrl": null }
+    "kimi": { "apiKey": "sk-xxx", "baseUrl": null, "codingPlanBaseUrl": null },
+    "glm": { "apiKey": "sk-xxx", "baseUrl": null, "region": null },
+    "minimax": { "apiKey": "sk-xxx", "baseUrl": null, "region": null },
+    "mimo": { "apiKey": "", "baseUrl": null, "plan": null }
   }
 }
 ```
@@ -75,16 +75,19 @@ New-Item -ItemType SymbolicLink -Path "$env:USERPROFILE\.claude\plugins\multi-hu
 | `theme` | `string` | `"default"` | 主题：`default`、`minimal`、`powerline`、`neon` |
 | `customTheme` | `object` | `{}` | 自定义主题覆盖，见下方 |
 | `display.*` | `boolean` | `true` | 各状态行的显示开关 |
+| `providers.*.codingPlanBaseUrl` | `string \| null` | `null` | 覆盖 Coding Plan 配额 API 的基础 URL（Kimi） |
+| `providers.*.region` | `"cn" \| "intl" \| null` | `null` | 提供商的区域选择，适用于有 CN/intl 端点的服务（GLM、MiniMax） |
+| `providers.*.plan` | `"lite" \| "standard" \| "pro" \| "max" \| null` | `null` | MiMo 套餐级别，决定月额度上限（lite=4.1K、standard=11K、pro=38K、max=82K，单位为百万 credits） |
 
-### 提供商 API
+### 提供商 API 支持
 
 | 提供商 | 配额查询 | 余额查询 |
 |--------|----------|----------|
 | DeepSeek | — | ✅ |
-| Kimi | — | ✅ |
+| Kimi | ✅（Coding Plan） | ✅（按量计费） |
 | GLM | ✅ | — |
-| MiniMax | — | — |
-| MiMo | — | — |
+| MiniMax | ✅（Coding Plan） | — |
+| MiMo | — | —（本地 credit 追踪） |
 
 只有配置了 API Key 的提供商才会尝试查询。API 调用失败静默返回空值。
 
@@ -122,7 +125,7 @@ New-Item -ItemType SymbolicLink -Path "$env:USERPROFILE\.claude\plugins\multi-hu
 }
 ```
 
-颜色规格语法：`#RRGGBB`（前景色）、`[#RRGGBB]`（背景色）、`b#RRGGBB[#RRGGBB]`（加粗前景 + 背景）。仅指定前景时自动推导背景（2/3 亮度），反之亦然。
+颜色规格语法：`#RRGGBB`（前景色）、`[#RRGGBB]`（背景色）、`b#RRGGBB[#RRGGBB]`（加粗前景 + 背景）。仅指定前景时自动推导背景（2/3 亮度），反之亦然（1.5x 亮度）。
 
 ## 提供商 API Key 获取
 
