@@ -64,6 +64,7 @@ export interface Theme {
     kimi?: string;
     glm?: string;
     minimax?: string;
+    mimo?: string;
     warning: string;
     error: string;
     tool: string;
@@ -113,5 +114,6 @@ export interface MultiHudConfig {
     kimi: ProviderConfig;
     glm: ProviderConfig;
     minimax: ProviderConfig;
+    mimo: ProviderConfig;
   };
 }

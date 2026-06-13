@@ -5,37 +5,14 @@ export class KimiProvider extends BaseProvider {
   readonly name = 'kimi';
 
   async getTokenUsage(): Promise<TokenUsage | null> {
-    try {
-      const data = await this.fetchJson<{
-        data: { total_tokens: number; input_tokens: number; output_tokens: number };
-      }>('/v1/users/me/usage');
-      return {
-        totalTokens: data.data.total_tokens,
-        inputTokens: data.data.input_tokens,
-        outputTokens: data.data.output_tokens,
-      };
-    } catch {
-      return null;
-    }
+    // Kimi's /v1/users/me/balance returns account balance, not token usage.
+    // There is no public API for aggregate token consumption.
+    return null;
   }
 
   async getQuotas(): Promise<QuotaWindow[] | null> {
-    try {
-      const data = await this.fetchJson<{
-        data: {
-          quotas: Array<{ window: string; used: number; limit: number; reset_at?: string }>;
-        };
-      }>('/v1/users/me/quotas');
-      return data.data.quotas.map((q) => ({
-        name: q.window as QuotaWindow['name'],
-        used: q.used,
-        limit: q.limit,
-        usedPercentage: Math.round((q.used / q.limit) * 100),
-        resetsAt: q.reset_at ? new Date(q.reset_at) : undefined,
-      }));
-    } catch {
-      return null;
-    }
+    // Kimi Code Plan may have quota windows, but no public API endpoint is documented.
+    return null;
   }
 
   async getContextLimit(modelId: string): Promise<number> {

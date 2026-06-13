@@ -21,6 +21,7 @@ export class Engine {
     if (modelId.startsWith('kimi')) return 'kimi';
     if (modelId.startsWith('glm')) return 'glm';
     if (modelId.startsWith('minimax')) return 'minimax';
+    if (modelId.startsWith('mimo')) return 'mimo';
     return null;
   }
 

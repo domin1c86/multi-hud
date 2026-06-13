@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { loadConfig, defaultConfig } from '../../src/core/config.js';
+import { loadConfig } from '../../src/core/config.js';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';

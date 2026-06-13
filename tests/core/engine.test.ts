@@ -5,10 +5,18 @@ import { Cache } from '../../src/core/cache.js';
 
 class MockProvider implements ProviderAdapter {
   readonly name = 'mock';
-  async getTokenUsage() { return null; }
-  async getQuotas() { return null; }
-  async getContextLimit() { return 64000; }
-  async validateConfig() { return true; }
+  async getTokenUsage() {
+    return null;
+  }
+  async getQuotas() {
+    return null;
+  }
+  async getContextLimit() {
+    return 64000;
+  }
+  async validateConfig() {
+    return true;
+  }
 }
 
 const config: MultiHudConfig = {
@@ -19,7 +27,13 @@ const config: MultiHudConfig = {
   animations: { enabled: false, defaultMode: 'on-change', defaultType: 'none', triggerThreshold: 5 },
   display: { showGitStatus: false, showTools: false, showAgents: false, showTodos: false, showCost: false },
   pricing: { currency: 'CNY', models: {} },
-  providers: { deepseek: { apiKey: '', baseUrl: null }, kimi: { apiKey: '', baseUrl: null }, glm: { apiKey: '', baseUrl: null }, minimax: { apiKey: '', baseUrl: null } },
+  providers: {
+    deepseek: { apiKey: '', baseUrl: null },
+    kimi: { apiKey: '', baseUrl: null },
+    glm: { apiKey: '', baseUrl: null },
+    minimax: { apiKey: '', baseUrl: null },
+    mimo: { apiKey: '', baseUrl: null },
+  },
 };
 
 describe('Engine', () => {
@@ -66,6 +80,11 @@ describe('Engine', () => {
     expect(engine.detectProvider('minimax-text-01')).toBe('minimax');
   });
 
+  it('detects mimo provider from model prefix', () => {
+    const engine = new Engine(config, '/tmp');
+    expect(engine.detectProvider('mimo-v2.5-pro')).toBe('mimo');
+  });
+
   it('setProvider sets the current provider and starts polling', () => {
     const engine = new Engine(config, '/tmp');
     const mockProvider = new MockProvider();
@@ -78,6 +97,7 @@ describe('Engine', () => {
     const engine = new Engine(config, '/tmp');
     const mockProvider = new MockProvider();
     engine.setProvider('mock', mockProvider);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const stopPollingSpy = vi.spyOn(engine as any, 'stopPolling');
     engine.setProvider('mock', mockProvider);
     expect(stopPollingSpy).not.toHaveBeenCalled();
@@ -94,10 +114,18 @@ describe('Engine', () => {
     const engine = new Engine(config, '/tmp');
     const mockProvider: ProviderAdapter = {
       name: 'mock',
-      async getTokenUsage() { return { prompt: 10, completion: 20, total: 30 }; },
-      async getQuotas() { return { rpm: 100, tpm: 1000 }; },
-      async getContextLimit() { return 128000; },
-      async validateConfig() { return true; },
+      async getTokenUsage() {
+        return { prompt: 10, completion: 20, total: 30 };
+      },
+      async getQuotas() {
+        return { rpm: 100, tpm: 1000 };
+      },
+      async getContextLimit() {
+        return 128000;
+      },
+      async validateConfig() {
+        return true;
+      },
     };
 
     engine.setProvider('mock', mockProvider);
@@ -124,10 +152,18 @@ describe('Engine', () => {
     const engine = new Engine(config, '/tmp');
     const errorProvider: ProviderAdapter = {
       name: 'error',
-      async getTokenUsage() { return null; },
-      async getQuotas() { throw new Error('quota failure'); },
-      async getContextLimit() { return 64000; },
-      async validateConfig() { return true; },
+      async getTokenUsage() {
+        return null;
+      },
+      async getQuotas() {
+        throw new Error('quota failure');
+      },
+      async getContextLimit() {
+        return 64000;
+      },
+      async validateConfig() {
+        return true;
+      },
     };
 
     engine.setProvider('error', errorProvider);

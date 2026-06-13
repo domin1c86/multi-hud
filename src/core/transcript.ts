@@ -44,7 +44,12 @@ export function parseTranscript(lines: string[]): TranscriptState {
           break;
         }
         case 'agent_start':
-          agents.set(event.agent, { name: event.agent, model: event.model, description: event.description, status: 'running' });
+          agents.set(event.agent, {
+            name: event.agent,
+            model: event.model,
+            description: event.description,
+            status: 'running',
+          });
           break;
         case 'agent_done': {
           const a = agents.get(event.agent);

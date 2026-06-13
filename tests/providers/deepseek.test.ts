@@ -1,55 +1,24 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { DeepSeekProvider } from '../../src/providers/deepseek.js';
 
 describe('DeepSeekProvider', () => {
-  let provider: DeepSeekProvider;
+  const provider = new DeepSeekProvider({ apiKey: 'test-key', baseUrl: null });
 
-  beforeEach(() => {
-    provider = new DeepSeekProvider({ apiKey: 'test-key', baseUrl: null });
-    global.fetch = vi.fn();
-  });
-
-  it('returns token usage', async () => {
-    vi.mocked(global.fetch).mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        data: {
-          total_tokens: 1000,
-          input_tokens: 600,
-          output_tokens: 400,
-        },
-      }),
-    } as Response);
-
+  it('getTokenUsage returns null (no public token usage API)', async () => {
+    // DeepSeek /user/balance returns account balance, not token counts.
     const usage = await provider.getTokenUsage();
-    expect(usage).not.toBeNull();
-    expect(usage!.totalTokens).toBe(1000);
-    expect(usage!.inputTokens).toBe(600);
-    expect(usage!.outputTokens).toBe(400);
+    expect(usage).toBeNull();
   });
 
-  it('returns quotas', async () => {
-    vi.mocked(global.fetch).mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        data: {
-          quotas: [
-            { window: '5h', used: 10, limit: 100, reset_at: '2026-05-08T20:00:00Z' },
-          ],
-        },
-      }),
-    } as Response);
-
+  it('getQuotas returns null (DeepSeek is pay-as-you-go, no quotas)', async () => {
     const quotas = await provider.getQuotas();
-    expect(quotas).not.toBeNull();
-    expect(quotas!.length).toBe(1);
-    expect(quotas![0].name).toBe('5h');
-    expect(quotas![0].usedPercentage).toBe(10);
+    expect(quotas).toBeNull();
   });
 
   it('returns context limit for known models', async () => {
-    const limit = await provider.getContextLimit('deepseek-chat');
-    expect(limit).toBe(64000);
+    expect(await provider.getContextLimit('deepseek-chat')).toBe(64000);
+    expect(await provider.getContextLimit('deepseek-coder')).toBe(64000);
+    expect(await provider.getContextLimit('unknown')).toBe(64000);
   });
 
   it('validates config', async () => {

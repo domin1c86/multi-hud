@@ -9,6 +9,7 @@ import { DeepSeekProvider } from './providers/deepseek.js';
 import { KimiProvider } from './providers/kimi.js';
 import { GlmProvider } from './providers/glm.js';
 import { MiniMaxProvider } from './providers/minimax.js';
+import { MiMoProvider } from './providers/mimo.js';
 import { MultiHudConfig, ProviderAdapter } from './types/index.js';
 import os from 'os';
 import path from 'path';
@@ -20,11 +21,18 @@ const CONFIG_PATH = path.join(CONFIG_DIR, 'config.json');
 
 function getProviderAdapter(name: string, config: MultiHudConfig): ProviderAdapter | null {
   switch (name) {
-    case 'deepseek': return new DeepSeekProvider(config.providers.deepseek);
-    case 'kimi': return new KimiProvider(config.providers.kimi);
-    case 'glm': return new GlmProvider(config.providers.glm);
-    case 'minimax': return new MiniMaxProvider(config.providers.minimax);
-    default: return null;
+    case 'deepseek':
+      return new DeepSeekProvider(config.providers.deepseek);
+    case 'kimi':
+      return new KimiProvider(config.providers.kimi);
+    case 'glm':
+      return new GlmProvider(config.providers.glm);
+    case 'minimax':
+      return new MiniMaxProvider(config.providers.minimax);
+    case 'mimo':
+      return new MiMoProvider(config.providers.mimo);
+    default:
+      return null;
   }
 }
 
@@ -36,7 +44,7 @@ export async function main(): Promise<void> {
   const theme = resolveTheme(config.theme, config.customTheme);
   const engine = new Engine(config, process.cwd());
 
-  let transcriptLines: string[] = [];
+  const transcriptLines: string[] = [];
 
   function cleanup() {
     engine.destroy();
@@ -83,7 +91,9 @@ export async function main(): Promise<void> {
             }
 
             const transcript = parseTranscript(transcriptLines);
-            const gitStatus = config.display.showGitStatus ? getGitStatus(process.cwd()) : { branch: '', dirty: false, ahead: 0, behind: 0 };
+            const gitStatus = config.display.showGitStatus
+              ? getGitStatus(process.cwd())
+              : { branch: '', dirty: false, ahead: 0, behind: 0 };
 
             const lines = renderStatusline({
               modelId,

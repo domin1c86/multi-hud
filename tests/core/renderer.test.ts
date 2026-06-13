@@ -69,6 +69,7 @@ describe('renderStatusline', () => {
       gitStatus: { branch: '', dirty: false, ahead: 0, behind: 0 },
       displayConfig: { showGitStatus: false, showTools: false, showAgents: false, showTodos: false, showCost: false },
     });
+    // eslint-disable-next-line no-control-regex
     expect(lines[0]).toMatch(/\x1b\[/);
   });
 

@@ -1,45 +1,28 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { KimiProvider } from '../../src/providers/kimi.js';
 
 describe('KimiProvider', () => {
-  let provider: KimiProvider;
+  const provider = new KimiProvider({ apiKey: 'test-key', baseUrl: null });
 
-  beforeEach(() => {
-    provider = new KimiProvider({ apiKey: 'test-key', baseUrl: null });
-    global.fetch = vi.fn();
-  });
-
-  it('returns token usage', async () => {
-    vi.mocked(global.fetch).mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        data: { total_tokens: 2000, input_tokens: 1200, output_tokens: 800 },
-      }),
-    } as Response);
-
+  it('getTokenUsage returns null (balance endpoint, not token usage)', async () => {
+    // Kimi /v1/users/me/balance returns account balance, not token counts.
     const usage = await provider.getTokenUsage();
-    expect(usage!.totalTokens).toBe(2000);
+    expect(usage).toBeNull();
   });
 
-  it('returns quotas', async () => {
-    vi.mocked(global.fetch).mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        data: {
-          quotas: [
-            { window: '5h', used: 5, limit: 50, reset_at: '2026-05-08T20:00:00Z' },
-            { window: '24h', used: 20, limit: 200, reset_at: '2026-05-09T08:00:00Z' },
-          ],
-        },
-      }),
-    } as Response);
-
+  it('getQuotas returns null (no public quota API documented)', async () => {
     const quotas = await provider.getQuotas();
-    expect(quotas!.length).toBe(2);
-    expect(quotas![1].name).toBe('24h');
+    expect(quotas).toBeNull();
   });
 
   it('returns context limit', async () => {
     expect(await provider.getContextLimit('kimi-latest')).toBe(256000);
+    expect(await provider.getContextLimit('unknown')).toBe(256000);
+  });
+
+  it('validates config', async () => {
+    expect(await provider.validateConfig()).toBe(true);
+    const bad = new KimiProvider({ apiKey: '', baseUrl: null });
+    expect(await bad.validateConfig()).toBe(false);
   });
 });

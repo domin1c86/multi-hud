@@ -5,5 +5,6 @@ dist/
 .claude/
 .vscode/
 docs/
-CLAUDE.md
-AGENTS.md
+.github/
+
+.prettierignore

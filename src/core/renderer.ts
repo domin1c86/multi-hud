@@ -60,19 +60,23 @@ export function renderStatusline(input: RenderInput): string[] {
 
   // Line 3: Tools
   if (input.displayConfig.showTools && input.tools && input.tools.length > 0) {
-    const toolStr = input.tools.map((tool) => {
-      const icon = tool.status === 'active' ? '◐' : '✓';
-      const color = tool.status === 'active' ? t.colors.toolActive : t.colors.toolDone;
-      return `${color}${icon} ${tool.name}${reset}`;
-    }).join(' │ ');
+    const toolStr = input.tools
+      .map((tool) => {
+        const icon = tool.status === 'active' ? '◐' : '✓';
+        const color = tool.status === 'active' ? t.colors.toolActive : t.colors.toolDone;
+        return `${color}${icon} ${tool.name}${reset}`;
+      })
+      .join(' │ ');
     lines.push(toolStr);
   }
 
   // Line 4: Agents
   if (input.displayConfig.showAgents && input.agents && input.agents.length > 0) {
-    const agentStr = input.agents.map((agent) => {
-      return `${t.colors.agentRunning}◐ ${agent.name} [${agent.model}]: ${agent.description}${reset}`;
-    }).join(' │ ');
+    const agentStr = input.agents
+      .map((agent) => {
+        return `${t.colors.agentRunning}◐ ${agent.name} [${agent.model}]: ${agent.description}${reset}`;
+      })
+      .join(' │ ');
     lines.push(agentStr);
   }
 
@@ -80,11 +84,14 @@ export function renderStatusline(input: RenderInput): string[] {
   if (input.displayConfig.showTodos && input.todos && input.todos.length > 0) {
     const total = input.todos.length;
     const done = input.todos.filter((td) => td.done).length;
-    const todoStr = input.todos.slice(0, 3).map((td) => {
-      const icon = td.done ? '✓' : '▸';
-      const color = td.done ? t.colors.todoDone : t.colors.todoPending;
-      return `${color}${icon} ${td.text}${reset}`;
-    }).join(' │ ');
+    const todoStr = input.todos
+      .slice(0, 3)
+      .map((td) => {
+        const icon = td.done ? '✓' : '▸';
+        const color = td.done ? t.colors.todoDone : t.colors.todoPending;
+        return `${color}${icon} ${td.text}${reset}`;
+      })
+      .join(' │ ');
     lines.push(`${todoStr} ${t.colors.dim}(${done}/${total})${reset}`);
   }
 

@@ -3,11 +3,7 @@ import { getGitStatus } from '../../src/core/git.js';
 
 describe('getGitStatus', () => {
   it('parses git status output', () => {
-    const exec = vi
-      .fn()
-      .mockReturnValueOnce('main')
-      .mockReturnValueOnce('2\t1')
-      .mockReturnValueOnce('M\tsrc/index.ts');
+    const exec = vi.fn().mockReturnValueOnce('main').mockReturnValueOnce('2\t1').mockReturnValueOnce('M\tsrc/index.ts');
 
     const status = getGitStatus('/fake/repo', exec as never);
     expect(status.branch).toBe('main');
@@ -29,11 +25,7 @@ describe('getGitStatus', () => {
   });
 
   it('marks clean when no changes', () => {
-    const exec = vi
-      .fn()
-      .mockReturnValueOnce('feature')
-      .mockReturnValueOnce('0\t0')
-      .mockReturnValueOnce('');
+    const exec = vi.fn().mockReturnValueOnce('feature').mockReturnValueOnce('0\t0').mockReturnValueOnce('');
 
     const status = getGitStatus('/fake/repo', exec as never);
     expect(status.branch).toBe('feature');

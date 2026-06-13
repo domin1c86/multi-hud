@@ -55,28 +55,18 @@ function parseHex(hex: string): { r: number; g: number; b: number } {
 }
 
 function formatHex(r: number, g: number, b: number): string {
-  return '#' + [r, g, b]
-    .map((c) => Math.max(0, Math.min(255, c)).toString(16).padStart(2, '0'))
-    .join('');
+  return '#' + [r, g, b].map((c) => Math.max(0, Math.min(255, c)).toString(16).padStart(2, '0')).join('');
 }
 
 // Derivation ratio: fg / bg = 1.5 (reference pair: #c0c0c0 / #808080)
 export function deriveBackground(fg: string): string {
   const { r, g, b } = parseHex(fg);
-  return formatHex(
-    Math.round(r * 2 / 3),
-    Math.round(g * 2 / 3),
-    Math.round(b * 2 / 3),
-  );
+  return formatHex(Math.round((r * 2) / 3), Math.round((g * 2) / 3), Math.round((b * 2) / 3));
 }
 
 export function deriveForeground(bg: string): string {
   const { r, g, b } = parseHex(bg);
-  return formatHex(
-    Math.round(r * 3 / 2),
-    Math.round(g * 3 / 2),
-    Math.round(b * 3 / 2),
-  );
+  return formatHex(Math.round((r * 3) / 2), Math.round((g * 3) / 2), Math.round((b * 3) / 2));
 }
 
 export function compileColorSpec(spec: string, role: 'fg' | 'bg'): string {

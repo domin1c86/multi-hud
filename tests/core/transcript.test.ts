@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseTranscript, ToolCall, AgentStatus, TodoItem } from '../../src/core/transcript.js';
+import { parseTranscript } from '../../src/core/transcript.js';
 
 describe('parseTranscript', () => {
   it('parses tool calls', () => {

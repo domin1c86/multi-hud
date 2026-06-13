@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { TokenUsage, QuotaWindow, ProviderAdapter } from '../../src/types/index.js';
+import type { TokenUsage, QuotaWindow } from '../../src/types/index.js';
 
 describe('type checks', () => {
   it('TokenUsage type compiles', () => {

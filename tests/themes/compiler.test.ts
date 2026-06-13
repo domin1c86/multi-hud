@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { parseColorSpec, deriveBackground, deriveForeground, compileColorSpec, compileTheme } from '../../src/themes/compiler.js';
+import {
+  parseColorSpec,
+  deriveBackground,
+  deriveForeground,
+  compileColorSpec,
+  compileTheme,
+} from '../../src/themes/compiler.js';
 import { builtInThemes } from '../../src/themes/built-ins.js';
 
 describe('parseColorSpec', () => {
@@ -57,7 +63,9 @@ describe('parseColorSpec', () => {
   it('throws on trailing junk', () => {
     expect(() => parseColorSpec('#39c5bbjunk')).toThrow('Invalid color spec: "#39c5bbjunk"');
     expect(() => parseColorSpec('#39c5bb[#7f7f7f]junk')).toThrow('Invalid color spec: "#39c5bb[#7f7f7f]junk"');
-    expect(() => parseColorSpec('#39c5bbx[#7f7f7f]')).toThrow('Invalid color spec: "#39c5bbx[#7f7f7f]" (unexpected: "#39c5bbx")');
+    expect(() => parseColorSpec('#39c5bbx[#7f7f7f]')).toThrow(
+      'Invalid color spec: "#39c5bbx[#7f7f7f]" (unexpected: "#39c5bbx")',
+    );
   });
 
   it('throws on invalid hex length', () => {
@@ -190,11 +198,31 @@ describe('compileTheme', () => {
         gitDirty: '#ff9800',
       },
       bars: {
-        context: { fgColor: '#4caf50', bgColor: '[#000000]', animation: { enabled: false, mode: 'on-change' as const, type: 'none' as const, triggerThreshold: 5 } },
-        quota5h: { fgColor: '#ff9800', bgColor: '[#000000]', animation: { enabled: false, mode: 'on-change' as const, type: 'none' as const, triggerThreshold: 5 } },
-        quota24h: { fgColor: '#2196f3', bgColor: '[#000000]', animation: { enabled: false, mode: 'on-change' as const, type: 'none' as const, triggerThreshold: 5 } },
-        quota7d: { fgColor: '#e91e63', bgColor: '[#000000]', animation: { enabled: false, mode: 'on-change' as const, type: 'none' as const, triggerThreshold: 5 } },
-        quota30d: { fgColor: '#00bcd4', bgColor: '[#000000]', animation: { enabled: false, mode: 'on-change' as const, type: 'none' as const, triggerThreshold: 5 } },
+        context: {
+          fgColor: '#4caf50',
+          bgColor: '[#000000]',
+          animation: { enabled: false, mode: 'on-change' as const, type: 'none' as const, triggerThreshold: 5 },
+        },
+        quota5h: {
+          fgColor: '#ff9800',
+          bgColor: '[#000000]',
+          animation: { enabled: false, mode: 'on-change' as const, type: 'none' as const, triggerThreshold: 5 },
+        },
+        quota24h: {
+          fgColor: '#2196f3',
+          bgColor: '[#000000]',
+          animation: { enabled: false, mode: 'on-change' as const, type: 'none' as const, triggerThreshold: 5 },
+        },
+        quota7d: {
+          fgColor: '#e91e63',
+          bgColor: '[#000000]',
+          animation: { enabled: false, mode: 'on-change' as const, type: 'none' as const, triggerThreshold: 5 },
+        },
+        quota30d: {
+          fgColor: '#00bcd4',
+          bgColor: '[#000000]',
+          animation: { enabled: false, mode: 'on-change' as const, type: 'none' as const, triggerThreshold: 5 },
+        },
       },
       icons: builtInThemes.default.icons,
       layout: builtInThemes.default.layout,
@@ -228,11 +256,31 @@ describe('compileTheme', () => {
         gitDirty: '\x1b[33m',
       },
       bars: {
-        context: { fgColor: '\x1b[32m', bgColor: '\x1b[40m', animation: { enabled: false, mode: 'on-change' as const, type: 'none' as const, triggerThreshold: 5 } },
-        quota5h: { fgColor: '\x1b[33m', bgColor: '\x1b[40m', animation: { enabled: false, mode: 'on-change' as const, type: 'none' as const, triggerThreshold: 5 } },
-        quota24h: { fgColor: '\x1b[34m', bgColor: '\x1b[40m', animation: { enabled: false, mode: 'on-change' as const, type: 'none' as const, triggerThreshold: 5 } },
-        quota7d: { fgColor: '\x1b[35m', bgColor: '\x1b[40m', animation: { enabled: false, mode: 'on-change' as const, type: 'none' as const, triggerThreshold: 5 } },
-        quota30d: { fgColor: '\x1b[36m', bgColor: '\x1b[40m', animation: { enabled: false, mode: 'on-change' as const, type: 'none' as const, triggerThreshold: 5 } },
+        context: {
+          fgColor: '\x1b[32m',
+          bgColor: '\x1b[40m',
+          animation: { enabled: false, mode: 'on-change' as const, type: 'none' as const, triggerThreshold: 5 },
+        },
+        quota5h: {
+          fgColor: '\x1b[33m',
+          bgColor: '\x1b[40m',
+          animation: { enabled: false, mode: 'on-change' as const, type: 'none' as const, triggerThreshold: 5 },
+        },
+        quota24h: {
+          fgColor: '\x1b[34m',
+          bgColor: '\x1b[40m',
+          animation: { enabled: false, mode: 'on-change' as const, type: 'none' as const, triggerThreshold: 5 },
+        },
+        quota7d: {
+          fgColor: '\x1b[35m',
+          bgColor: '\x1b[40m',
+          animation: { enabled: false, mode: 'on-change' as const, type: 'none' as const, triggerThreshold: 5 },
+        },
+        quota30d: {
+          fgColor: '\x1b[36m',
+          bgColor: '\x1b[40m',
+          animation: { enabled: false, mode: 'on-change' as const, type: 'none' as const, triggerThreshold: 5 },
+        },
       },
       icons: builtInThemes.default.icons,
       layout: builtInThemes.default.layout,
