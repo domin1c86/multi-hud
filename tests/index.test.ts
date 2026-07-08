@@ -9,14 +9,19 @@ describe('index', () => {
 
 describe('quotasFromRateLimits', () => {
   it('maps five_hour and seven_day to 5h/7d windows', () => {
+    // resets_at is Unix epoch *seconds* (per Claude Code statusline docs).
+    const fiveHourResetsAt = 1774091383;
+    const sevenDayResetsAt = 1772276983;
     const quotas = quotasFromRateLimits({
-      five_hour: { used_percentage: 42, resets_at: 1774091383998 },
-      seven_day: { used_percentage: 77, resets_at: 1772276983998 },
+      five_hour: { used_percentage: 42, resets_at: fiveHourResetsAt },
+      seven_day: { used_percentage: 77, resets_at: sevenDayResetsAt },
     });
     expect(quotas.map((q) => q.name)).toEqual(['5h', '7d']);
     expect(quotas[0].usedPercentage).toBe(42);
     expect(quotas[0].resetsAt).toBeInstanceOf(Date);
+    expect(quotas[0].resetsAt?.getTime()).toBe(fiveHourResetsAt * 1000);
     expect(quotas[1].usedPercentage).toBe(77);
+    expect(quotas[1].resetsAt?.getTime()).toBe(sevenDayResetsAt * 1000);
   });
 
   it('returns an empty array when rate_limits is absent or empty', () => {

@@ -61,7 +61,8 @@ export interface CostBasis {
 /**
  * Resolve the token basis for cost on a single consistent reference point: the current
  * context snapshot when available (so cache discounts and GLM/MiniMax tier resolution
- * reflect one moment), else session totals treated as uncached input + output.
+ * reflect one moment), else the context_window input/output totals treated as uncached
+ * input + output.
  */
 export function costBasisFrom(
   currentUsage: CurrentUsage | null | undefined,
@@ -91,7 +92,8 @@ export function quotasFromRateLimits(rateLimits: StatuslineEvent['rate_limits'])
       used: rateLimits.five_hour.used_percentage,
       limit: 100,
       usedPercentage: rateLimits.five_hour.used_percentage,
-      resetsAt: rateLimits.five_hour.resets_at ? new Date(rateLimits.five_hour.resets_at) : undefined,
+      // resets_at is Unix epoch *seconds* (per Claude Code statusline docs); Date wants ms.
+      resetsAt: rateLimits.five_hour.resets_at ? new Date(rateLimits.five_hour.resets_at * 1000) : undefined,
     });
   }
   if (rateLimits.seven_day) {
@@ -100,7 +102,7 @@ export function quotasFromRateLimits(rateLimits: StatuslineEvent['rate_limits'])
       used: rateLimits.seven_day.used_percentage,
       limit: 100,
       usedPercentage: rateLimits.seven_day.used_percentage,
-      resetsAt: rateLimits.seven_day.resets_at ? new Date(rateLimits.seven_day.resets_at) : undefined,
+      resetsAt: rateLimits.seven_day.resets_at ? new Date(rateLimits.seven_day.resets_at * 1000) : undefined,
     });
   }
   return windows;
@@ -145,10 +147,12 @@ export async function main(): Promise<void> {
 
   // Token usage from Claude Code
   const currentUsage = evt.context_window?.current_usage;
+  // As of Claude Code v2.1.132 these reflect current context usage (input includes cache
+  // reads/writes), not cumulative session totals; older versions sent session totals.
   const totalInput = evt.context_window?.total_input_tokens ?? 0;
   const totalOutput = evt.context_window?.total_output_tokens ?? 0;
 
-  // The Tokens/Total display line reflects cumulative session totals.
+  // The Tokens/Total display line reflects the context_window totals reported by Claude Code.
   const tokenUsage: TokenUsage | undefined =
     totalInput > 0 || totalOutput > 0
       ? {

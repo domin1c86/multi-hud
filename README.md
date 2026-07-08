@@ -25,13 +25,21 @@ npm run build
 
 ### Claude Code integration
 
-```bash
-# macOS / Linux
-ln -s $(pwd)/dist/index.js ~/.claude/plugins/multi-hud/index.js
+Register the built entry point as your Claude Code status line by adding a `statusLine`
+block to `~/.claude/settings.json` (use the **absolute** path to `dist/index.js`):
 
-# Windows (PowerShell, admin)
-New-Item -ItemType SymbolicLink -Path "$env:USERPROFILE\.claude\plugins\multi-hud\index.js" -Target "$(pwd)\dist\index.js"
+```json
+{
+  "statusLine": {
+    "type": "command",
+    "command": "node /absolute/path/to/multi-hud/dist/index.js",
+    "padding": 0
+  }
+}
 ```
+
+Restart Claude Code and the HUD appears at the bottom. See **[INSTALL.md](INSTALL.md)**
+for full step-by-step instructions, provider API-key setup, and troubleshooting.
 
 ## Configuration
 
