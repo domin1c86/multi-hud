@@ -13,6 +13,7 @@ interface DeepSeekBalanceResponse {
 
 export class DeepSeekProvider extends BaseProvider {
   readonly name = 'deepseek';
+  protected override readonly defaultBaseUrl = 'https://api.deepseek.com';
 
   override async getBalance(): Promise<BalanceInfo | null> {
     if (!this.config.apiKey) return null;

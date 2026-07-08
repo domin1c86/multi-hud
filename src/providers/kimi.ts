@@ -12,6 +12,7 @@ interface KimiBalanceResponse {
 
 export class KimiProvider extends BaseProvider {
   readonly name = 'kimi';
+  protected override readonly defaultBaseUrl = 'https://api.moonshot.cn';
 
   override async getBalance(): Promise<BalanceInfo | null> {
     if (!this.config.apiKey) return null;

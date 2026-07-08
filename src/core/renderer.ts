@@ -61,7 +61,7 @@ export function renderStatusline(input: RenderInput): string[] {
     const parts = input.quotas.map((q) => {
       const barStyle = t.bars[`quota${q.name}` as keyof Theme['bars']];
       const bar = barStyle ? renderBar(q.usedPercentage, barStyle.fgColor, barStyle.bgColor, t.layout.barWidth) : '';
-      return `${t.colors.label}${q.name}${reset} ${bar} ${q.usedPercentage}%`;
+      return `${t.colors.label}${q.name}${reset} ${bar} ${Math.round(q.usedPercentage)}%`;
     });
     lines.push(parts.join(' │ '));
   } else if (input.tokenUsage) {

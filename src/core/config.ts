@@ -32,9 +32,14 @@ export function loadConfig(configPath: string): MultiHudConfig {
   if (!fs.existsSync(configPath)) {
     return { ...defaultConfig };
   }
-  const raw = fs.readFileSync(configPath, 'utf-8');
-  const parsed = JSON.parse(raw);
-  return deepMerge(defaultConfig as unknown as Record<string, unknown>, parsed) as unknown as MultiHudConfig;
+  try {
+    const raw = fs.readFileSync(configPath, 'utf-8');
+    const parsed = JSON.parse(raw);
+    return deepMerge(defaultConfig as unknown as Record<string, unknown>, parsed) as unknown as MultiHudConfig;
+  } catch {
+    // Unreadable or malformed config must not crash the statusline — fall back to defaults.
+    return { ...defaultConfig };
+  }
 }
 
 function deepMerge(target: Record<string, unknown>, source: unknown): Record<string, unknown> {

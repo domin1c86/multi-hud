@@ -25,6 +25,7 @@ const UNIT_NAME: Record<number, QuotaWindow['name']> = {
 
 export class GlmProvider extends BaseProvider {
   readonly name = 'glm';
+  protected override readonly defaultBaseUrl = 'https://open.bigmodel.cn';
 
   override async getQuotas(): Promise<QuotaWindow[] | null> {
     if (!this.config.apiKey) return null;

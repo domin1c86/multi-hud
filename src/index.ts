@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { loadConfig } from './core/config.js';
+import { loadConfig, defaultConfig } from './core/config.js';
 import { renderStatusline } from './core/renderer.js';
 import { getGitStatus } from './core/git.js';
 import { computeSessionCost } from './core/cost.js';
@@ -41,15 +41,82 @@ function detectProvider(modelId: string, config: MultiHudConfig): string | null 
   if (config.providerOverride) return config.providerOverride;
   if (modelId.startsWith('deepseek')) return 'deepseek';
   if (modelId.startsWith('kimi')) return 'kimi';
+  if (modelId.startsWith('moonshot')) return 'kimi';
   if (modelId.startsWith('glm')) return 'glm';
   if (modelId.startsWith('minimax')) return 'minimax';
   if (modelId.startsWith('mimo')) return 'mimo';
   return null;
 }
 
+type CurrentUsage = NonNullable<StatuslineEvent['context_window']['current_usage']>;
+
+export interface CostBasis {
+  inputUncached: number;
+  cacheRead: number;
+  cacheCreation: number;
+  output: number;
+  context: number;
+}
+
+/**
+ * Resolve the token basis for cost on a single consistent reference point: the current
+ * context snapshot when available (so cache discounts and GLM/MiniMax tier resolution
+ * reflect one moment), else session totals treated as uncached input + output.
+ */
+export function costBasisFrom(
+  currentUsage: CurrentUsage | null | undefined,
+  totalInput: number,
+  totalOutput: number,
+): CostBasis {
+  if (currentUsage) {
+    return {
+      inputUncached: currentUsage.input_tokens,
+      cacheRead: currentUsage.cache_read_input_tokens,
+      cacheCreation: currentUsage.cache_creation_input_tokens,
+      output: currentUsage.output_tokens,
+      context:
+        currentUsage.input_tokens + currentUsage.cache_read_input_tokens + currentUsage.cache_creation_input_tokens,
+    };
+  }
+  return { inputUncached: totalInput, cacheRead: 0, cacheCreation: 0, output: totalOutput, context: totalInput };
+}
+
+/** Map Claude Code's built-in `rate_limits` event data to quota windows. */
+export function quotasFromRateLimits(rateLimits: StatuslineEvent['rate_limits']): QuotaWindow[] {
+  if (!rateLimits) return [];
+  const windows: QuotaWindow[] = [];
+  if (rateLimits.five_hour) {
+    windows.push({
+      name: '5h',
+      used: rateLimits.five_hour.used_percentage,
+      limit: 100,
+      usedPercentage: rateLimits.five_hour.used_percentage,
+      resetsAt: rateLimits.five_hour.resets_at ? new Date(rateLimits.five_hour.resets_at) : undefined,
+    });
+  }
+  if (rateLimits.seven_day) {
+    windows.push({
+      name: '7d',
+      used: rateLimits.seven_day.used_percentage,
+      limit: 100,
+      usedPercentage: rateLimits.seven_day.used_percentage,
+      resetsAt: rateLimits.seven_day.resets_at ? new Date(rateLimits.seven_day.resets_at) : undefined,
+    });
+  }
+  return windows;
+}
+
 export async function main(): Promise<void> {
   if (!fs.existsSync(CONFIG_DIR)) {
     fs.mkdirSync(CONFIG_DIR, { recursive: true });
+  }
+  // Write a default config template on first run (best-effort; a read-only FS must not crash).
+  if (!fs.existsSync(CONFIG_PATH)) {
+    try {
+      fs.writeFileSync(CONFIG_PATH, JSON.stringify(defaultConfig, null, 2) + '\n');
+    } catch {
+      // Ignore — loadConfig falls through to defaults anyway.
+    }
   }
   const config = loadConfig(CONFIG_PATH);
   const theme = resolveTheme(config.theme, config.customTheme);
@@ -80,36 +147,37 @@ export async function main(): Promise<void> {
   const currentUsage = evt.context_window?.current_usage;
   const totalInput = evt.context_window?.total_input_tokens ?? 0;
   const totalOutput = evt.context_window?.total_output_tokens ?? 0;
-  const inputUncached = currentUsage?.input_tokens ?? totalInput;
-  const cacheRead = currentUsage?.cache_read_input_tokens ?? 0;
-  const cacheCreation = currentUsage?.cache_creation_input_tokens ?? 0;
 
+  // The Tokens/Total display line reflects cumulative session totals.
   const tokenUsage: TokenUsage | undefined =
     totalInput > 0 || totalOutput > 0
       ? {
           inputTokens: totalInput,
           outputTokens: totalOutput,
           totalTokens: totalInput + totalOutput,
-          cacheReadTokens: cacheRead,
-          cacheCreationTokens: cacheCreation,
+          cacheReadTokens: currentUsage?.cache_read_input_tokens ?? 0,
+          cacheCreationTokens: currentUsage?.cache_creation_input_tokens ?? 0,
         }
       : undefined;
 
-  // Cost calculation using built-in pricing
+  const costBasis = costBasisFrom(currentUsage, totalInput, totalOutput);
+
   let cost: number | null = null;
   if (config.display.showCost && rawModelId) {
     cost = computeSessionCost({
       modelId: rawModelId,
-      inputUncachedTokens: inputUncached,
-      cacheReadTokens: cacheRead,
-      cacheCreationTokens: cacheCreation,
-      outputTokens: totalOutput,
-      contextTokens: totalInput,
+      inputUncachedTokens: costBasis.inputUncached,
+      cacheReadTokens: costBasis.cacheRead,
+      cacheCreationTokens: costBasis.cacheCreation,
+      outputTokens: costBasis.output,
+      contextTokens: costBasis.context,
     });
   }
 
-  // Quota/balance data from provider API (best-effort, read from cache file)
-  let quotas: QuotaWindow[] | undefined;
+  // Quotas: prefer Claude Code's built-in rate_limits (always available, no network),
+  // fall back to the provider API. Balance has no built-in source, so always try the API.
+  const rateLimitQuotas = quotasFromRateLimits(evt.rate_limits);
+  let quotas: QuotaWindow[] | undefined = rateLimitQuotas.length > 0 ? rateLimitQuotas : undefined;
   let balance: BalanceInfo | undefined;
   let errorMessage: string | undefined;
 
@@ -117,8 +185,10 @@ export async function main(): Promise<void> {
     try {
       const adapter = getProviderAdapter(providerName, config);
       if (adapter) {
-        const quotaResult = await adapter.getQuotas();
-        if (quotaResult) quotas = quotaResult;
+        if (!quotas) {
+          const quotaResult = await adapter.getQuotas();
+          if (quotaResult) quotas = quotaResult;
+        }
         const balanceResult = await adapter.getBalance?.();
         if (balanceResult) balance = balanceResult;
       }

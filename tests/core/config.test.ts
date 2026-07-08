@@ -30,8 +30,11 @@ describe('loadConfig', () => {
     expect(config.display.showGitStatus).toBe(true);
   });
 
-  it('throws on invalid JSON', () => {
+  it('falls back to defaults on invalid JSON instead of throwing', () => {
     fs.writeFileSync(configPath, 'not json');
-    expect(() => loadConfig(configPath)).toThrow();
+    let config!: ReturnType<typeof loadConfig>;
+    expect(() => (config = loadConfig(configPath))).not.toThrow();
+    expect(config.theme).toBe('default');
+    expect(config.pollIntervalMs).toBe(30000);
   });
 });

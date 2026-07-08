@@ -170,32 +170,33 @@ export interface ModelPrice {
 }
 
 export interface ParsedModelId {
-  /** The model ID without the [1m] suffix */
+  /** The model ID without the context-override suffix */
   modelId: string;
-  /** Whether the [1m] suffix was present (enables 1M context for DeepSeek) */
-  oneMCtx: boolean;
+  /** Context window (tokens) from a `[Nk]`/`[Nm]` suffix, if present (e.g. `[1m]` → 1_000_000) */
+  ctxOverride?: number;
   /** Provider name derived from the first segment before '-' */
   provider: string;
 }
 
 /**
  * Parse a model ID like "deepseek-v4-pro[1m]" into its components.
- * Strips the [1m] suffix and extracts the provider prefix.
+ * Strips a `[Nk]`/`[Nm]` context-override suffix and extracts the provider prefix.
  */
 export function parseModelId(rawModelId: string): ParsedModelId {
   let modelId = rawModelId;
-  let oneMCtx = false;
+  let ctxOverride: number | undefined;
 
   const match = rawModelId.match(/^(.+)\[(\d+)([km])\]$/);
   if (match) {
     modelId = match[1];
-    oneMCtx = true;
+    const unit = match[3] === 'm' ? 1_000_000 : 1_000;
+    ctxOverride = parseInt(match[2], 10) * unit;
   }
 
   const dashIdx = modelId.indexOf('-');
   const provider = dashIdx > 0 ? modelId.substring(0, dashIdx) : modelId;
 
-  return { modelId, oneMCtx, provider };
+  return { modelId, ctxOverride, provider };
 }
 
 /** Map provider prefixes (from detectProvider) to CONTEXT_LIMITS keys */
@@ -213,8 +214,11 @@ export function getContextLimit(rawModelId: string, claudeCodeCtxSize?: number):
 
   if (claudeCodeCtxSize) return claudeCodeCtxSize;
 
+  // An explicit `[Nk]`/`[Nm]` suffix overrides the built-in table for any provider.
+  if (parsed.ctxOverride) return parsed.ctxOverride;
+
   if (parsed.provider === 'deepseek') {
-    return parsed.oneMCtx ? 1_000_000 : DEEPSEEK_DEFAULT_CONTEXT;
+    return DEEPSEEK_DEFAULT_CONTEXT;
   }
 
   const limitsKey = providerToLimitsKey(parsed.provider);

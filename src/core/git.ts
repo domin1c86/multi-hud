@@ -15,12 +15,20 @@ export function getGitStatus(cwd: string, exec: typeof execSync = execSync): Git
       stdio: ['pipe', 'pipe', 'ignore'],
     }).trim();
 
-    const aheadBehind = exec('git rev-list --left-right --count HEAD...@{u}', {
-      cwd,
-      encoding: 'utf-8',
-      stdio: ['pipe', 'pipe', 'ignore'],
-    }).trim();
-    const [ahead, behind] = aheadBehind.split('\t').map((n) => parseInt(n, 10) || 0);
+    // Ahead/behind requires a configured upstream; a branch without one is common
+    // and must not wipe the branch/dirty info, so isolate this query.
+    let ahead = 0;
+    let behind = 0;
+    try {
+      const aheadBehind = exec('git rev-list --left-right --count HEAD...@{u}', {
+        cwd,
+        encoding: 'utf-8',
+        stdio: ['pipe', 'pipe', 'ignore'],
+      }).trim();
+      [ahead, behind] = aheadBehind.split('\t').map((n) => parseInt(n, 10) || 0);
+    } catch {
+      // No upstream configured — leave ahead/behind at 0.
+    }
 
     const statusOutput = exec('git status --porcelain', {
       cwd,

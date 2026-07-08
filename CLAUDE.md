@@ -18,6 +18,8 @@ npm run format:check # Prettier check
 
 Prettier: single quotes, trailing commas, semicolons, 120-char print width, 2-space indent.
 
+ESM project (`"type": "module"`, `module: NodeNext`): intra-`src` imports must use explicit `.js` extensions even though the source is `.ts` (e.g. `import { getGitStatus } from './core/git.js'`). Only `src/**` is compiled by `tsc` (`tests` are excluded from `tsconfig.json` and run directly by vitest), so `npm run build` will not type-check tests — `npm test` is what exercises them.
+
 ## Architecture
 
 This is a **Claude Code statusline plugin** — Claude Code launches it as a subprocess, streams `statusline` and `transcript` JSON events on stdin, and the plugin writes ANSI-escaped status lines to stdout. There is no server, no HTTP listener, no persistent process outside Claude Code.
@@ -37,7 +39,7 @@ Note: [src/core/engine.ts](src/core/engine.ts) (provider lifecycle/polling manag
 ### Key modules
 
 - **[src/index.ts](src/index.ts)** — Entry point. Reads a single JSON object from stdin (Claude Code sends one per invocation), detects the provider from `model.id` prefix, calls provider adapters directly for quotas/balance, computes cost, gets git status, and renders.
-- **[src/core/pricing.ts](src/core/pricing.ts)** — Built-in model pricing (CNY per 1M tokens), context window limits (tokens), and tier resolution. Functions: `parseModelId()` (handles `[1m]` suffix), `getContextLimit()`, `getModelPrice()`, `calculateCost()`. GLM tiers depend on context/output sizes; MiniMax tiers depend on context size.
+- **[src/core/pricing.ts](src/core/pricing.ts)** — Built-in model pricing (CNY per 1M tokens), context window limits (tokens), and tier resolution. Functions: `parseModelId()` (handles `[1m]` suffix), `getContextLimit()`, `getModelPrice()`, `calculateCost()`. GLM tiers depend on context/output sizes; MiniMax tiers depend on context size. **The data is hardcoded as TS constants here** — the `src/info/*.json` files (`model2price`, `model2context`, `model2addons`) are the reference spec these constants were transcribed from; they are **not** imported at runtime. When adding a model or changing a price, update both the JSON reference and the `pricing.ts` constants.
 - **[src/core/cost.ts](src/core/cost.ts)** — Thin wrapper around `pricing.ts` that exposes `computeSessionCost()` for the main loop.
 - **[src/core/renderer.ts](src/core/renderer.ts)** — Pure function `renderStatusline()` that takes a `RenderInput` and returns `string[]` (one per output line). Produces up to 5 lines: model + git + context bar, quotas/tokens + cost, balance, tools, agents, todos.
 - **[src/core/config.ts](src/core/config.ts)** — Loads `~/.claude/plugins/multi-hud/config.json`, deep-merges with defaults. All config keys are optional — missing values fall through to `defaultConfig`.

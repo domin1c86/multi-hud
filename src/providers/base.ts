@@ -2,6 +2,8 @@ import { ProviderAdapter, ProviderConfig, QuotaWindow, BalanceInfo } from '../ty
 
 export abstract class BaseProvider implements ProviderAdapter {
   abstract readonly name: string;
+  /** Fallback base URL used when `config.baseUrl` is not set. Overridden per provider. */
+  protected readonly defaultBaseUrl: string = '';
   protected config: ProviderConfig;
 
   constructor(config: ProviderConfig) {
@@ -21,7 +23,7 @@ export abstract class BaseProvider implements ProviderAdapter {
   }
 
   protected async fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
-    const base = this.config.baseUrl ?? '';
+    const base = this.config.baseUrl ?? this.defaultBaseUrl;
     const response = await fetch(base + url, {
       ...init,
       headers: {
