@@ -1,6 +1,6 @@
 # multi-hud
 
-[English](README.md) | 简体中文
+简体中文 | [English](README.md)
 
 Claude Code 状态栏插件，支持 DeepSeek、Kimi、GLM、MiniMax、MiMo 第三方中文 LLM 提供商的实时用量监控和成本估算。
 
