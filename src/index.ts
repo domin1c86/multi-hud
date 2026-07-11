@@ -5,12 +5,19 @@ import { getGitStatus } from './core/git.js';
 import { computeSessionCost } from './core/cost.js';
 import { getContextLimit } from './core/pricing.js';
 import { resolveTheme } from './themes/index.js';
+import { resolveBarAnimation } from './animations/index.js';
+import {
+  readAnimationState,
+  writeAnimationState,
+  resolveOnChange,
+  type AnimationState,
+} from './core/animationState.js';
 import { DeepSeekProvider } from './providers/deepseek.js';
 import { KimiProvider } from './providers/kimi.js';
 import { GlmProvider } from './providers/glm.js';
 import { MiniMaxProvider } from './providers/minimax.js';
 import { MiMoProvider } from './providers/mimo.js';
-import type { MultiHudConfig, ProviderAdapter, BalanceInfo, QuotaWindow, TokenUsage } from './types/index.js';
+import type { MultiHudConfig, ProviderAdapter, BalanceInfo, QuotaWindow, TokenUsage, Theme } from './types/index.js';
 import type { StatuslineEvent } from './types/statusline.js';
 import os from 'os';
 import path from 'path';
@@ -80,6 +87,52 @@ export function costBasisFrom(
     };
   }
   return { inputUncached: totalInput, cacheRead: 0, cacheCreation: 0, output: totalOutput, context: totalInput };
+}
+
+/**
+ * Resolve which bars animate this frame. Reads/writes the per-session `on-change`
+ * state file as a side effect; returns a map keyed by bar key (`context`, `quota5h`, …)
+ * for the bars that should animate now. Returns an empty map when animations are off.
+ */
+export function resolveAnimations(params: {
+  config: MultiHudConfig;
+  theme: Theme;
+  sessionId: string;
+  now: number;
+  contextPercentage: number;
+  quotas?: QuotaWindow[] | null;
+}): Record<string, { type: 'pulse' | 'laser' }> {
+  const { config, theme, sessionId, now, contextPercentage, quotas } = params;
+  const animations: Record<string, { type: 'pulse' | 'laser' }> = {};
+  if (!config.animations.enabled) return animations;
+
+  const targets: Array<{ key: string; pct: number }> = [
+    { key: 'context', pct: contextPercentage },
+    ...(quotas ?? []).map((q) => ({ key: `quota${q.name}`, pct: q.usedPercentage })),
+  ];
+
+  const prev = readAnimationState(sessionId);
+  const next: AnimationState = {};
+
+  for (const { key, pct } of targets) {
+    const barStyle = theme.bars[key as keyof Theme['bars']];
+    if (!barStyle) continue;
+    const resolved = resolveBarAnimation(barStyle.animation, config.animations);
+    if (!resolved) continue;
+
+    if (resolved.mode === 'always') {
+      // Track pct so a later switch to on-change has a baseline; always animate.
+      next[key] = { pct, changedAt: prev[key]?.changedAt ?? now };
+      animations[key] = { type: resolved.type };
+    } else {
+      const r = resolveOnChange(prev[key], pct, resolved.triggerThreshold, now);
+      next[key] = r.next;
+      if (r.active) animations[key] = { type: resolved.type };
+    }
+  }
+
+  writeAnimationState(sessionId, next);
+  return animations;
 }
 
 /** Map Claude Code's built-in `rate_limits` event data to quota windows. */
@@ -206,6 +259,16 @@ export async function main(): Promise<void> {
     ? getGitStatus(evt.cwd || process.cwd())
     : { branch: '', dirty: false, ahead: 0, behind: 0 };
 
+  const now = Date.now();
+  const animations = resolveAnimations({
+    config,
+    theme,
+    sessionId: evt.session_id || 'default',
+    now,
+    contextPercentage,
+    quotas,
+  });
+
   const renderLines = renderStatusline({
     modelId: rawModelId,
     contextPercentage,
@@ -221,6 +284,8 @@ export async function main(): Promise<void> {
     todos: [],
     displayConfig: config.display,
     errorMessage,
+    now,
+    animations,
   });
 
   process.stdout.write(renderLines.join('\n') + '\n');

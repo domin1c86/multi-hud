@@ -14,7 +14,7 @@ Inspired by the community plugin [claude-hud](https://github.com/asilvadesigns/c
 - **Multi-provider** — DeepSeek, Kimi (Moonshot), GLM (Zhipu), MiniMax, MiMo; auto-detected from model ID prefix
 - **Git status** — Current branch and dirty state indicator
 - **Themes** — Built-in default, minimal, powerline, and neon themes; customizable via hex color specs
-- **Animations** — Pulse and laser bar animations (framework ready, renderer integration pending)
+- **Animations** — Pulse (brightness) and laser (sweep) bar animations, `always` or `on-change`; opt-in via `animations.enabled`
 
 ## Install
 
@@ -131,6 +131,32 @@ Only providers with a configured API key are queried. API failures fail silently
 ```
 
 Color spec syntax: `#RRGGBB` (foreground), `[#RRGGBB]` (background), `b#RRGGBB[#RRGGBB]` (bold foreground + background). When only foreground is specified, background is derived at 2/3 brightness (and vice versa at 1.5x).
+
+## Animations
+
+Bars (context + quotas) can animate. Animations are **off by default** — enable them under
+`animations` in `config.json`:
+
+```json
+{
+  "animations": {
+    "enabled": true,
+    "defaultMode": "on-change",
+    "defaultType": "pulse",
+    "triggerThreshold": 5
+  }
+}
+```
+
+- `defaultType` — `pulse` (fill brightness rises and falls) or `laser` (a highlight sweeps
+  across the filled portion). A theme can override the effect per bar.
+- `defaultMode` — `always` (animate continuously) or `on-change` (animate for ~1.5s after a
+  bar's value jumps by at least `triggerThreshold` percentage points).
+- `triggerThreshold` — the jump size (in %) that triggers `on-change`.
+
+Because a status line is a stateless subprocess that Claude Code re-runs on each refresh,
+each invocation renders a single frame chosen by wall-clock time — animations advance as
+fast as Claude Code updates the status line, not on a fixed frame rate.
 
 ## Provider API keys
 

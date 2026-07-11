@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { main, quotasFromRateLimits, costBasisFrom } from '../src/index.js';
+import { main, quotasFromRateLimits, costBasisFrom, resolveAnimations } from '../src/index.js';
+import { resolveTheme } from '../src/themes/index.js';
+import { defaultConfig } from '../src/core/config.js';
 
 describe('index', () => {
   it('exports a main function', () => {
@@ -27,6 +29,39 @@ describe('quotasFromRateLimits', () => {
   it('returns an empty array when rate_limits is absent or empty', () => {
     expect(quotasFromRateLimits(undefined)).toEqual([]);
     expect(quotasFromRateLimits({})).toEqual([]);
+  });
+});
+
+describe('resolveAnimations', () => {
+  const theme = resolveTheme('default', {});
+
+  it('returns an empty map when animations are disabled (the default)', () => {
+    const map = resolveAnimations({
+      config: defaultConfig,
+      theme,
+      sessionId: 'test-disabled',
+      now: 1000,
+      contextPercentage: 50,
+      quotas: [{ name: '5h', used: 10, limit: 100, usedPercentage: 10 }],
+    });
+    expect(map).toEqual({});
+  });
+
+  it('animates context and quota bars via global defaults when the master switch is on', () => {
+    const config = {
+      ...defaultConfig,
+      animations: { enabled: true, defaultMode: 'always' as const, defaultType: 'pulse' as const, triggerThreshold: 5 },
+    };
+    const map = resolveAnimations({
+      config,
+      theme,
+      sessionId: 'test-enabled',
+      now: 1000,
+      contextPercentage: 50,
+      quotas: [{ name: '5h', used: 10, limit: 100, usedPercentage: 10 }],
+    });
+    expect(map.context).toEqual({ type: 'pulse' });
+    expect(map.quota5h).toEqual({ type: 'pulse' });
   });
 });
 

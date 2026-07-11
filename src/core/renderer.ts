@@ -1,6 +1,7 @@
 import { Theme, QuotaWindow, TokenUsage, BalanceInfo } from '../types/index.js';
 import { GitStatus } from './git.js';
 import { ToolCall, AgentStatus, TodoItem } from './transcript.js';
+import { animateBar } from '../animations/index.js';
 
 export interface RenderInput {
   modelId: string;
@@ -23,6 +24,10 @@ export interface RenderInput {
     showCost: boolean;
   };
   errorMessage?: string;
+  /** Current wall-clock time (ms) driving animation frames. Omit for static output. */
+  now?: number;
+  /** Bars that should animate this frame, keyed by bar key (`context`, `quota5h`, …). */
+  animations?: Record<string, { type: 'pulse' | 'laser' }>;
 }
 
 function formatTokens(tokens: number): string {
@@ -48,7 +53,14 @@ export function renderStatusline(input: RenderInput): string[] {
     const dirty = input.gitStatus.dirty ? `${t.colors.gitDirty}${t.icons.gitDirty}${reset}` : '';
     line1 += ` │ ${t.colors.gitBranch}${t.icons.gitBranch} ${input.gitStatus.branch}${dirty}${reset}`;
   }
-  const ctxBar = renderBar(input.contextPercentage, t.bars.context.fgColor, t.bars.context.bgColor, t.layout.barWidth);
+  const ctxBar = barFor(
+    input,
+    'context',
+    input.contextPercentage,
+    t.bars.context.fgColor,
+    t.bars.context.bgColor,
+    t.layout.barWidth,
+  );
   const ctxLabel = t.layout.showLabels ? 'Context ' : '';
   const ctxSizeStr = input.contextSize ? ` ${formatTokens(input.contextSize)}` : '';
   line1 += ` │ ${t.colors.label}${ctxLabel}${reset}${ctxBar} ${Math.round(input.contextPercentage)}%${ctxSizeStr}`;
@@ -60,7 +72,9 @@ export function renderStatusline(input: RenderInput): string[] {
   } else if (input.quotas && input.quotas.length > 0) {
     const parts = input.quotas.map((q) => {
       const barStyle = t.bars[`quota${q.name}` as keyof Theme['bars']];
-      const bar = barStyle ? renderBar(q.usedPercentage, barStyle.fgColor, barStyle.bgColor, t.layout.barWidth) : '';
+      const bar = barStyle
+        ? barFor(input, `quota${q.name}`, q.usedPercentage, barStyle.fgColor, barStyle.bgColor, t.layout.barWidth)
+        : '';
       return `${t.colors.label}${q.name}${reset} ${bar} ${Math.round(q.usedPercentage)}%`;
     });
     lines.push(parts.join(' │ '));
@@ -118,6 +132,15 @@ export function renderStatusline(input: RenderInput): string[] {
   }
 
   return lines;
+}
+
+/** Render a bar animated if it's in the resolved `animations` map and `now` is set, else static. */
+function barFor(input: RenderInput, barKey: string, pct: number, fg: string, bg: string, width: number): string {
+  const anim = input.animations?.[barKey];
+  if (anim && input.now !== undefined) {
+    return animateBar(pct, fg, bg, width, anim.type, input.now);
+  }
+  return renderBar(pct, fg, bg, width);
 }
 
 export function renderBar(percentage: number, fg: string, bg: string, width: number): string {
