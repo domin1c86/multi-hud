@@ -40,13 +40,13 @@ To configure features later, just run `/multi-hud:configure` again, or edit
 
 Use this if you cloned the repo and want to run it directly without the plugin system.
 
-## 1. Prerequisites
+### 1. Prerequisites
 
 - **Node.js** (v18+). The status line is launched with `node`, so Node must be on your
   `PATH`. Check with `node --version`.
 - **Claude Code** installed and working.
 
-## 2. Build
+### 2. Build
 
 From the project directory:
 
@@ -63,7 +63,7 @@ This compiles the TypeScript to `dist/`. The entry point Claude Code runs is
 node -e "console.log(require('path').resolve('dist/index.js'))"
 ```
 
-## 3. Register the status line
+### 3. Register the status line
 
 Claude Code status lines are configured in your settings file, **not** by copying files
 into the plugins directory. Add a `statusLine` block to `~/.claude/settings.json` (create
@@ -93,14 +93,19 @@ You can also scope it to a single project by putting the same block in that proj
 
 Restart Claude Code (or open a new session). The HUD should appear at the bottom.
 
-## 4. Provider API keys (optional)
+---
+
+The remaining sections apply to **both** install methods.
+
+## Provider API keys (optional)
 
 Out of the box the HUD renders everything Claude Code already provides — model, context
 bar, cost, git, and rate-limit quota bars (Pro/Max only) — with **no network calls**.
 
 To also show a third-party provider's **account balance or plan quota**, give multi-hud an
-API key. On first run it creates `~/.claude/plugins/multi-hud/config.json`; edit the
-matching provider block:
+API key. Plugin users can run `/multi-hud:configure` and enter it there; otherwise edit
+`~/.claude/plugins/multi-hud/config.json` (created on first run) and set the matching
+provider block:
 
 ```json
 {
@@ -133,25 +138,26 @@ Get keys at: [DeepSeek](https://platform.deepseek.com/) ·
 [MiniMax](https://platform.minimaxi.com/). API failures fail silently — the rest of the HUD
 still renders.
 
-## 5. Verify
+## Verify
 
-Smoke-test the built program the same way Claude Code invokes it (feed it a sample event on
-stdin):
+Smoke-test the entry point the same way Claude Code invokes it (feed it a sample event on
+stdin). From a repo checkout:
 
 ```bash
 node dist/index.js < tests/fixtures/mock-statusline.json
 ```
 
 You should see rendered, ANSI-colored status lines (model, context bar, tokens, cost). If
-that works, the HUD will work inside Claude Code once step 3 is done.
+that works, the HUD will work inside Claude Code once the status line is registered.
 
 ## Troubleshooting
 
 | Symptom | Likely cause / fix |
 |---------|--------------------|
 | No status line at all | `settings.json` missing/invalid, or `command` path wrong. Confirm the JSON parses and the absolute path to `dist/index.js` is correct. |
+| No status line after a plugin update | The install path changes each version — re-run `/multi-hud:setup` to rewrite the absolute path. |
 | `node: command not found` in the status line | Node isn't on Claude Code's `PATH`. Use an absolute node path, e.g. `/usr/local/bin/node ...`. |
-| Status line is blank/errors | Rebuild with `npm run build`; re-run the step 5 smoke test to see the raw output. |
+| Status line is blank/errors | Rebuild with `npm run build`; re-run the Verify smoke test to see the raw output. |
 | No balance or quota shown | `apiKey` not set in `config.json`, or that provider has no such API (see the table). |
 | No quota bars | Time-windowed rate-limit bars come from Claude Code only for Claude.ai Pro/Max, or from GLM's provider API. DeepSeek/Kimi have no quota source (balance only). |
 
