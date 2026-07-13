@@ -18,28 +18,17 @@ Inspired by the community plugin [claude-hud](https://github.com/asilvadesigns/c
 
 ## Install
 
-```bash
-npm install
-npm run build
+Install as a Claude Code plugin, then run the setup command:
+
+```
+/plugin marketplace add domin1c86/multi-hud
+/plugin install multi-hud
+/multi-hud:setup          # registers the statusline in your settings.json
+/multi-hud:configure      # (optional) toggle display elements, theme, animations
 ```
 
-### Claude Code integration
-
-Register the built entry point as your Claude Code status line by adding a `statusLine`
-block to `~/.claude/settings.json` (use the **absolute** path to `dist/index.js`):
-
-```json
-{
-  "statusLine": {
-    "type": "command",
-    "command": "node /absolute/path/to/multi-hud/dist/index.js",
-    "padding": 0
-  }
-}
-```
-
-Restart Claude Code and the HUD appears at the bottom. See **[INSTALL.md](INSTALL.md)**
-for full step-by-step instructions, provider API-key setup, and troubleshooting.
+Fully restart Claude Code after `/multi-hud:setup`. See **[INSTALL.md](INSTALL.md)** for the
+manual `settings.json` method (dev/local use), provider API-key setup, and troubleshooting.
 
 ## Configuration
 

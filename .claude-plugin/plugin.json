@@ -1,0 +1,26 @@
+{
+  "name": "multi-hud",
+  "description": "Real-time statusline HUD for Chinese LLM providers (DeepSeek, Kimi, GLM, MiniMax, MiMo) — context, quotas, balance, cost estimation, and git status.",
+  "version": "0.1.0",
+  "author": {
+    "name": "domin1c86",
+    "url": "https://github.com/domin1c86"
+  },
+  "commands": ["./commands/setup.md", "./commands/configure.md"],
+  "homepage": "https://github.com/domin1c86/multi-hud",
+  "repository": "https://github.com/domin1c86/multi-hud",
+  "license": "MIT",
+  "keywords": [
+    "hud",
+    "statusline",
+    "monitoring",
+    "context",
+    "cost",
+    "deepseek",
+    "kimi",
+    "glm",
+    "minimax",
+    "mimo",
+    "claude-code"
+  ]
+}

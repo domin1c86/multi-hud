@@ -2,10 +2,43 @@
 
 `multi-hud` is a Claude Code **status line** — a small program that Claude Code runs as a
 subprocess, feeding it session data on stdin and printing the HUD you see at the bottom of
-the terminal. Installing it is two steps: **build it**, then **point Claude Code at it** in
-`settings.json`. Provider API keys (for balance/quota) are an optional third step.
+the terminal.
+
+There are two ways to install it: the **plugin** flow (recommended) or the **manual**
+`settings.json` flow (for local development or if you'd rather not use the plugin system).
 
 ---
+
+## Option A — Install as a plugin (recommended)
+
+```
+/plugin marketplace add domin1c86/multi-hud
+/plugin install multi-hud
+```
+
+Then wire the status line and (optionally) pick your features:
+
+```
+/multi-hud:setup          # writes the statusLine entry into your settings.json (with a backup)
+/multi-hud:configure      # toggle git/tools/agents/todos/cost, theme, animations, API keys
+```
+
+`/multi-hud:setup` detects the installed plugin path and registers
+`node "<path>/dist/index.js"` as your status line. **Fully quit and restart Claude Code**
+afterward. Re-run `/multi-hud:setup` after a plugin update, since the install path changes
+with each version.
+
+> The plugin ships a prebuilt `dist/` and has no runtime dependencies, so there's nothing to
+> build — `node` (18+) on your `PATH` is all that's required.
+
+To configure features later, just run `/multi-hud:configure` again, or edit
+`~/.claude/plugins/multi-hud/config.json` directly (see [Configuration](README.md#configuration)).
+
+---
+
+## Option B — Manual install (dev / local)
+
+Use this if you cloned the repo and want to run it directly without the plugin system.
 
 ## 1. Prerequisites
 
