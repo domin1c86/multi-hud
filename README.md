@@ -12,6 +12,7 @@ Inspired by the community plugin [claude-hud](https://github.com/asilvadesigns/c
 - **Provider quota monitoring** — Multi-window quota bars: 5h / 24h / 7d / 30d (Coding Plan mode)
 - **Token usage & cost** — Input/output token counts with automatic cost calculation (¥) using built-in pricing tables
 - **Multi-provider** — DeepSeek, Kimi (Moonshot), GLM (Zhipu), MiniMax, MiMo; auto-detected from model ID prefix
+- **Routing-aware** — Detects a routing proxy (`ANTHROPIC_BASE_URL`) and surfaces the real backend model (from the transcript) with a `⇄` marker, so provider/cost reflect what actually answered
 - **Git status** — Current branch and dirty state indicator
 - **Themes** — Built-in default, minimal, powerline, and neon themes; customizable via hex color specs
 - **Animations** — Pulse (brightness) and laser (sweep) bar animations, `always` or `on-change`; opt-in via `animations.enabled`
@@ -51,7 +52,8 @@ Config file: `~/.claude/plugins/multi-hud/config.json`. Created automatically on
     "showTools": true,
     "showAgents": true,
     "showTodos": true,
-    "showCost": true
+    "showCost": true,
+    "showRouting": true
   },
   "providers": {
     "deepseek": { "apiKey": "sk-xxx", "baseUrl": null },
@@ -72,6 +74,7 @@ Config file: `~/.claude/plugins/multi-hud/config.json`. Created automatically on
 | `theme` | `string` | `"default"` | Theme: `default`, `minimal`, `powerline`, or `neon` |
 | `customTheme` | `object` | `{}` | Theme overrides (see below) |
 | `display.*` | `boolean` | `true` | Toggle each status line |
+| `display.showRouting` | `boolean` | `true` | Show the `⇄` marker + actual backend model when a routing proxy is detected |
 
 ### Provider API support
 

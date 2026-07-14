@@ -16,6 +16,9 @@ export function renderStatusline(input) {
     const reset = '\x1b[0m';
     // Line 1: Model + Git + Context
     let line1 = `${t.colors.model}${input.modelId}${reset}`;
+    if (input.routing?.active && input.displayConfig.showRouting !== false) {
+        line1 += ` ${t.colors.dim}⇄${reset}`;
+    }
     if (input.displayConfig.showGitStatus && input.gitStatus.branch) {
         const dirty = input.gitStatus.dirty ? `${t.colors.gitDirty}${t.icons.gitDirty}${reset}` : '';
         line1 += ` │ ${t.colors.gitBranch}${t.icons.gitBranch} ${input.gitStatus.branch}${dirty}${reset}`;

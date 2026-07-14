@@ -28,17 +28,22 @@ This is a **Claude Code statusline plugin** — Claude Code launches it as a sub
 
 ```
 Claude Code stdin ──→ index.ts (reads single JSON object)
+                        ├── routing.ts + transcriptModel.ts (resolve actual model behind a proxy)
                         ├── direct provider API calls (quotas/balance)
                         ├── cost.ts → pricing.ts (model pricing + context limits)
                         ├── git.ts (rev-parse, rev-list, status)
                         └── renderer.ts → stdout (ANSI lines)
 ```
 
+**Routing detection:** when `ANTHROPIC_BASE_URL` (inherited from Claude Code's env) points at a non-Anthropic host, requests are going through a routing proxy (claude-code-router, LiteLLM, …), so `evt.model.id` is only the requested *alias*. In that case [src/core/transcriptModel.ts](src/core/transcriptModel.ts) reads the last main-thread assistant `message.model` from `evt.transcript_path` (the ground-truth model that answered) and [src/core/routing.ts](src/core/routing.ts) substitutes it as the active model for provider/cost/context/display — with a `⇄` marker on line 1. Not routed → behaviour is unchanged (no transcript read, requested id used verbatim). `providerOverride` still wins.
+
 Note: [src/core/engine.ts](src/core/engine.ts) (provider lifecycle/polling manager) and [src/core/transcript.ts](src/core/transcript.ts) (JSONL transcript parser) exist but are not yet wired into main() — provider calls and transcript state are handled inline for now.
 
 ### Key modules
 
-- **[src/index.ts](src/index.ts)** — Entry point. Reads a single JSON object from stdin (Claude Code sends one per invocation), detects the provider from `model.id` prefix, calls provider adapters directly for quotas/balance, computes cost, gets git status, and renders.
+- **[src/index.ts](src/index.ts)** — Entry point. Reads a single JSON object from stdin (Claude Code sends one per invocation), resolves the active model (routing-aware, see above), detects the provider from its prefix, calls provider adapters directly for quotas/balance, computes cost, gets git status, and renders.
+- **[src/core/routing.ts](src/core/routing.ts)** — Pure routing helpers. `isRoutedBaseUrl()` (host ≠ `api.anthropic.com`) and `resolveActiveModel()` (prefer the transcript model only when routed; else the requested id verbatim — regression-free).
+- **[src/core/transcriptModel.ts](src/core/transcriptModel.ts)** — `readLatestModel()`: bounded tail read (~256KB) of the transcript JSONL, scanning backward for the last non-sidechain assistant `message.model`. Best-effort → `null` on any failure.
 - **[src/core/pricing.ts](src/core/pricing.ts)** — Built-in model pricing (CNY per 1M tokens), context window limits (tokens), and tier resolution. Functions: `parseModelId()` (handles `[1m]` suffix), `getContextLimit()`, `getModelPrice()`, `calculateCost()`. GLM tiers depend on context/output sizes; MiniMax tiers depend on context size. **The data is hardcoded as TS constants here** — the `src/info/*.json` files (`model2price`, `model2context`, `model2addons`) are the reference spec these constants were transcribed from; they are **not** imported at runtime. When adding a model or changing a price, update both the JSON reference and the `pricing.ts` constants.
 - **[src/core/cost.ts](src/core/cost.ts)** — Thin wrapper around `pricing.ts` that exposes `computeSessionCost()` for the main loop.
 - **[src/core/renderer.ts](src/core/renderer.ts)** — Pure function `renderStatusline()` that takes a `RenderInput` and returns `string[]` (one per output line). Produces up to 5 lines: model + git + context bar, quotas/tokens + cost, balance, tools, agents, todos.
@@ -87,4 +92,4 @@ A status line is a **stateless subprocess** — Claude Code re-runs it per refre
 
 ### Testing
 
-24 test files, all vitest with `environment: 'node'` and `globals: true`. Tests mirror `src/` structure under `tests/`. Provider tests use `fetch` mocking. Config tests verify deep merge behavior. Compiler tests verify hex spec parsing and derivation math. Renderer tests verify output shape (incl. the static-vs-animated bar path). Git tests pass a mock `exec` function. Animation tests cover frame wraparound, pulse brightness, laser movement, the resolution rule, and `on-change` detection. Each provider has its own test file.
+26 test files, all vitest with `environment: 'node'` and `globals: true`. Tests mirror `src/` structure under `tests/`. Provider tests use `fetch` mocking. Config tests verify deep merge behavior. Compiler tests verify hex spec parsing and derivation math. Renderer tests verify output shape (incl. the static-vs-animated bar path and the `⇄` routing marker). Git tests pass a mock `exec` function. Animation tests cover frame wraparound, pulse brightness, laser movement, the resolution rule, and `on-change` detection. Routing tests cover `isRoutedBaseUrl`/`resolveActiveModel` and the `readLatestModel` transcript reader (temp JSONL fixtures). Each provider has its own test file.

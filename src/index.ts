@@ -5,6 +5,8 @@ import { getGitStatus } from './core/git.js';
 import { computeSessionCost } from './core/cost.js';
 import { getContextLimit } from './core/pricing.js';
 import { resolveTheme } from './themes/index.js';
+import { isRoutedBaseUrl, resolveActiveModel } from './core/routing.js';
+import { readLatestModel } from './core/transcriptModel.js';
 import { resolveBarAnimation } from './animations/index.js';
 import {
   readAnimationState,
@@ -189,8 +191,13 @@ export async function main(): Promise<void> {
     return;
   }
 
-  // Model ID and provider detection
-  const rawModelId = evt.model?.id || '';
+  // Model ID and provider detection. When a routing layer is active (ANTHROPIC_BASE_URL points
+  // away from Anthropic), the requested model.id is only an alias — prefer the actual model the
+  // transcript reports so provider/cost/display reflect what really served the request.
+  const routed = isRoutedBaseUrl(process.env.ANTHROPIC_BASE_URL);
+  const transcriptModel = routed && evt.transcript_path ? readLatestModel(evt.transcript_path) : null;
+  const active = resolveActiveModel({ requestedId: evt.model?.id || '', transcriptModel, routed });
+  const rawModelId = active.modelId;
   const providerName = detectProvider(rawModelId, config);
 
   // Context data from Claude Code
@@ -283,6 +290,7 @@ export async function main(): Promise<void> {
     agents: [],
     todos: [],
     displayConfig: config.display,
+    routing: { active: active.routed },
     errorMessage,
     now,
     animations,

@@ -35,6 +35,8 @@ they're not changing it.
    - "Running agents" → `display.showAgents`
    - "Todos" → `display.showTodos`
    - "Token cost (¥)" → `display.showCost`
+   - "Routing marker (⇄)" → `display.showRouting` (shows the actual backend model + a ⇄ mark
+     when a routing proxy is detected via `ANTHROPIC_BASE_URL`)
    Selected ⇒ `true`, unselected ⇒ `false`.
 
 2. **Theme** (header "Theme", single) — "Pick a theme:" → `theme`:
