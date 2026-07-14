@@ -1,4 +1,5 @@
 import { animateBar } from '../animations/index.js';
+import { formatModelId } from './modelName.js';
 function formatTokens(tokens) {
     if (tokens >= 1_000_000) {
         const m = tokens / 1_000_000;
@@ -15,7 +16,8 @@ export function renderStatusline(input) {
     const t = input.theme;
     const reset = '\x1b[0m';
     // Line 1: Model + Git + Context
-    let line1 = `${t.colors.model}${input.modelId}${reset}`;
+    const modelText = input.displayConfig.prettyModelName === false ? input.modelId : formatModelId(input.modelId);
+    let line1 = `${t.colors.model}${modelText}${reset}`;
     if (input.routing?.active && input.displayConfig.showRouting !== false) {
         line1 += ` ${t.colors.dim}⇄${reset}`;
     }

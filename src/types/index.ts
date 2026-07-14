@@ -110,6 +110,7 @@ export interface MultiHudConfig {
     showTodos: boolean;
     showCost: boolean;
     showRouting: boolean;
+    prettyModelName: boolean;
   };
   providers: {
     deepseek: ProviderConfig;

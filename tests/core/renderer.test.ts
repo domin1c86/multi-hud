@@ -14,7 +14,7 @@ describe('renderStatusline', () => {
       gitStatus: { branch: '', dirty: false, ahead: 0, behind: 0 },
       displayConfig: { showGitStatus: false, showTools: false, showAgents: false, showTodos: false, showCost: false },
     });
-    expect(lines[0]).toContain('deepseek-v4-flash');
+    expect(lines[0]).toContain('[deepseek] deepseek-v4-flash');
     expect(lines[0]).toContain('50%');
   });
 
@@ -136,7 +136,7 @@ describe('renderStatusline', () => {
       displayConfig: { showGitStatus: false, showTools: false, showAgents: false, showTodos: false, showCost: false },
       routing: { active: true },
     });
-    expect(lines[0]).toContain('deepseek-v4-pro');
+    expect(lines[0]).toContain('[deepseek] deepseek-v4-pro');
     expect(lines[0]).toContain('⇄');
   });
 

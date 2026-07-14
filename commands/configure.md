@@ -37,6 +37,8 @@ they're not changing it.
    - "Token cost (¥)" → `display.showCost`
    - "Routing marker (⇄)" → `display.showRouting` (shows the actual backend model + a ⇄ mark
      when a routing proxy is detected via `ANTHROPIC_BASE_URL`)
+   - "Pretty model name" → `display.prettyModelName` (shows `[provider] name`, e.g.
+     `[claude] opus-4.8`; unselected shows the raw model id)
    Selected ⇒ `true`, unselected ⇒ `false`.
 
 2. **Theme** (header "Theme", single) — "Pick a theme:" → `theme`:

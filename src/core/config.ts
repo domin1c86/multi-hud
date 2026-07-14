@@ -19,6 +19,7 @@ export const defaultConfig: MultiHudConfig = {
     showTodos: true,
     showCost: true,
     showRouting: true,
+    prettyModelName: true,
   },
   providers: {
     deepseek: { apiKey: '', baseUrl: null },

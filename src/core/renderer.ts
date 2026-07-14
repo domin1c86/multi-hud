@@ -2,6 +2,7 @@ import { Theme, QuotaWindow, TokenUsage, BalanceInfo } from '../types/index.js';
 import { GitStatus } from './git.js';
 import { ToolCall, AgentStatus, TodoItem } from './transcript.js';
 import { animateBar } from '../animations/index.js';
+import { formatModelId } from './modelName.js';
 
 export interface RenderInput {
   modelId: string;
@@ -23,6 +24,7 @@ export interface RenderInput {
     showTodos: boolean;
     showCost: boolean;
     showRouting?: boolean;
+    prettyModelName?: boolean;
   };
   /** Routing state — draws a `⇄` marker after the model when a routing layer is active. */
   routing?: { active: boolean };
@@ -51,7 +53,8 @@ export function renderStatusline(input: RenderInput): string[] {
   const reset = '\x1b[0m';
 
   // Line 1: Model + Git + Context
-  let line1 = `${t.colors.model}${input.modelId}${reset}`;
+  const modelText = input.displayConfig.prettyModelName === false ? input.modelId : formatModelId(input.modelId);
+  let line1 = `${t.colors.model}${modelText}${reset}`;
   if (input.routing?.active && input.displayConfig.showRouting !== false) {
     line1 += ` ${t.colors.dim}⇄${reset}`;
   }

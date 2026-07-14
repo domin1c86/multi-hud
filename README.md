@@ -13,6 +13,7 @@ Inspired by the community plugin [claude-hud](https://github.com/asilvadesigns/c
 - **Token usage & cost** — Input/output token counts with automatic cost calculation (¥) using built-in pricing tables
 - **Multi-provider** — DeepSeek, Kimi (Moonshot), GLM (Zhipu), MiniMax, MiMo; auto-detected from model ID prefix
 - **Routing-aware** — Detects a routing proxy (`ANTHROPIC_BASE_URL`) and surfaces the real backend model (from the transcript) with a `⇄` marker, so provider/cost reflect what actually answered
+- **Clean model names** — Displays `[provider] name` (e.g. `[claude] opus-4.8`, `[zai] glm-5.1`), with the company resolved from the model prefix
 - **Git status** — Current branch and dirty state indicator
 - **Themes** — Built-in default, minimal, powerline, and neon themes; customizable via hex color specs
 - **Animations** — Pulse (brightness) and laser (sweep) bar animations, `always` or `on-change`; opt-in via `animations.enabled`
@@ -53,7 +54,8 @@ Config file: `~/.claude/plugins/multi-hud/config.json`. Created automatically on
     "showAgents": true,
     "showTodos": true,
     "showCost": true,
-    "showRouting": true
+    "showRouting": true,
+    "prettyModelName": true
   },
   "providers": {
     "deepseek": { "apiKey": "sk-xxx", "baseUrl": null },
@@ -75,6 +77,7 @@ Config file: `~/.claude/plugins/multi-hud/config.json`. Created automatically on
 | `customTheme` | `object` | `{}` | Theme overrides (see below) |
 | `display.*` | `boolean` | `true` | Toggle each status line |
 | `display.showRouting` | `boolean` | `true` | Show the `⇄` marker + actual backend model when a routing proxy is detected |
+| `display.prettyModelName` | `boolean` | `true` | Format the model as `[provider] name` (e.g. `[claude] opus-4.8`); `false` shows the raw id |
 
 ### Provider API support
 
