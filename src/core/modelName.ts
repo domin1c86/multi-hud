@@ -13,7 +13,7 @@
  */
 const PREFIX_TO_PROVIDER: Record<string, string> = {
   mimo: 'xiaomi',
-  kimi: 'kimi',
+  kimi: 'moonshot',
   minimax: 'minimax',
   deepseek: 'deepseek',
   glm: 'zai',

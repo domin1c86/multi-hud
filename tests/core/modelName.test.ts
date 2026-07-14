@@ -18,7 +18,7 @@ describe('formatModelId', () => {
     ['hunyuan-turbo', '[tencent] hunyuan-turbo'],
     // Company name == prefix → keep the prefix (user choice)
     ['deepseek-v4-pro', '[deepseek] deepseek-v4-pro'],
-    ['kimi-k2.6', '[kimi] kimi-k2.6'],
+    ['kimi-k2.6', '[moonshot] kimi-k2.6'],
     ['minimax-m3', '[minimax] minimax-m3'],
     // Context-size suffix preserved
     ['deepseek-v4-pro[1m]', '[deepseek] deepseek-v4-pro[1m]'],
