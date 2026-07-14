@@ -1,0 +1,20 @@
+{
+  "name": "multi-hud",
+  "owner": {
+    "name": "domin1c86",
+    "url": "https://github.com/domin1c86"
+  },
+  "metadata": {
+    "description": "Real-time statusline HUD for Chinese LLM providers — context, quotas, balance, cost, and git status.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "multi-hud",
+      "source": "./",
+      "description": "Statusline HUD for DeepSeek, Kimi, GLM, MiniMax, and MiMo: context bar, provider quotas/balance, token cost estimation (¥), and git status. Run /multi-hud:setup after install.",
+      "category": "monitoring",
+      "tags": ["hud", "statusline", "monitoring", "context", "cost", "providers"]
+    }
+  ]
+}

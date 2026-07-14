@@ -96,6 +96,37 @@ describe('renderStatusline', () => {
     expect(lines[0]).toContain('░');
   });
 
+  it('animates the context bar when it is in the animations map', () => {
+    const base = {
+      modelId: 'deepseek-v4-flash',
+      contextPercentage: 50,
+      theme,
+      gitStatus: { branch: '', dirty: false, ahead: 0, behind: 0 },
+      displayConfig: { showGitStatus: false, showTools: false, showAgents: false, showTodos: false, showCost: false },
+    } as const;
+    const staticLine = renderStatusline({ ...base })[0];
+    const animA = renderStatusline({ ...base, now: 0, animations: { context: { type: 'pulse' } } })[0];
+    const animB = renderStatusline({ ...base, now: 375, animations: { context: { type: 'pulse' } } })[0];
+    // Animated frames differ from each other (pulse advances)...
+    expect(animA).not.toBe(animB);
+    // ...and from the static render, but keep the same 50% label.
+    expect(animA).not.toBe(staticLine);
+    expect(animA).toContain('50%');
+  });
+
+  it('renders a static bar when animations is absent even if now is set', () => {
+    const staticBar = renderBar(50, theme.bars.context.fgColor, theme.bars.context.bgColor, theme.layout.barWidth);
+    const lines = renderStatusline({
+      modelId: 'deepseek-v4-flash',
+      contextPercentage: 50,
+      theme,
+      gitStatus: { branch: '', dirty: false, ahead: 0, behind: 0 },
+      displayConfig: { showGitStatus: false, showTools: false, showAgents: false, showTodos: false, showCost: false },
+      now: 12345,
+    });
+    expect(lines[0]).toContain(staticBar);
+  });
+
   it('renders error message with warning icon', () => {
     const lines = renderStatusline({
       modelId: 'deepseek-v4-flash',
