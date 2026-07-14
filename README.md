@@ -84,12 +84,17 @@ Config file: `~/.claude/plugins/multi-hud/config.json`. Created automatically on
 | Provider | Quota polling | Balance polling |
 |----------|---------------|-----------------|
 | DeepSeek | — | Yes |
-| Kimi | — | Yes |
+| Kimi | Yes (coding plan) | Yes (pay-as-you-go) |
 | GLM | Yes | — |
 | MiniMax | — | — |
 | MiMo | — | — |
 
 Only providers with a configured API key are queried. API failures fail silently.
+
+Kimi has two access modes, distinguished by the key you configure as `providers.kimi.apiKey`:
+a **Kimi Code subscription** key (`sk-kimi-…`) shows the coding-plan quota windows (5h / weekly),
+while a **pay-as-you-go** key (`sk-…`) shows the prepaid balance instead. The quota endpoint is
+the unofficial one the Kimi CLI uses, so it may change.
 
 ## Themes
 

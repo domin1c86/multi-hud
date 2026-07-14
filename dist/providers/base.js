@@ -14,8 +14,8 @@ export class BaseProvider {
     async validateConfig() {
         return !!this.config.apiKey;
     }
-    async fetchJson(url, init) {
-        const base = this.config.baseUrl ?? this.defaultBaseUrl;
+    async fetchJson(url, init, baseOverride) {
+        const base = baseOverride ?? this.config.baseUrl ?? this.defaultBaseUrl;
         const response = await fetch(base + url, {
             ...init,
             headers: {

@@ -56,11 +56,11 @@ Note: [src/core/engine.ts](src/core/engine.ts) (provider lifecycle/polling manag
 
 ### Provider adapter pattern
 
-All providers extend `BaseProvider` ([src/providers/base.ts](src/providers/base.ts)) which provides `fetchJson<T>(url, init?)` — a thin wrapper around `fetch()` that adds `Authorization: Bearer <apiKey>` and the provider's `baseUrl` prefix. Each concrete provider (DeepSeek, Kimi, GLM, MiniMax, MiMo) implements:
+All providers extend `BaseProvider` ([src/providers/base.ts](src/providers/base.ts)) which provides `fetchJson<T>(url, init?, baseOverride?)` — a thin wrapper around `fetch()` that adds `Authorization: Bearer <apiKey>` and prefixes `baseOverride ?? config.baseUrl ?? defaultBaseUrl` (the override lets one provider hit a second host — Kimi's quota endpoint). Each concrete provider (DeepSeek, Kimi, GLM, MiniMax, MiMo) implements:
 
 - `name` — provider identifier string
-- `getQuotas()` → `QuotaWindow[] | null` (5h/24h/7d/30d windows with used/limit/percentage) — only GLM implements this
-- `getBalance()` → `BalanceInfo | null` — only DeepSeek and Kimi implement this
+- `getQuotas()` → `QuotaWindow[] | null` (5h/24h/7d/30d windows with used/limit/percentage) — GLM (`/api/monitor/usage/quota/limit`) and Kimi implement this. Kimi's is the **coding-plan subscription** usage from the unofficial endpoint the Kimi CLI uses (`GET https://api.kimi.com/coding/v1/usages`, fallback `/usage`); it is gated on a `sk-kimi-…` key and parses defensively (both the `limits[]` and `data[]`/`model_name:"all"` shapes → `5h`/`7d`).
+- `getBalance()` → `BalanceInfo | null` — only DeepSeek and Kimi implement this (Kimi's is the pay-as-you-go prepaid balance). A Kimi session shows quotas OR balance depending on which key type is configured.
 - `validateConfig()` → `Promise<boolean>` — returns `true` if `apiKey` is set (overridden from base)
 
 Errors in API calls are caught and return `null` — the main loop stores error strings which the renderer displays on the second status line.
