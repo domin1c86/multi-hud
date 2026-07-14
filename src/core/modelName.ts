@@ -33,10 +33,10 @@ const DATE_SEGMENT = /^\d{6,}$/;
 
 /**
  * Format a raw model id for display as `[provider] name`.
- * Returns just the version-formatted name (no bracket) when the prefix is not in the map, and
- * `''` for empty input.
+ * Returns just the version-formatted name (no bracket) when the prefix is not in the map, when
+ * `showProvider` is false, and `''` for empty input.
  */
-export function formatModelId(rawModelId: string): string {
+export function formatModelId(rawModelId: string, showProvider = true): string {
   if (!rawModelId) return '';
 
   const suffixMatch = rawModelId.match(CONTEXT_SUFFIX);
@@ -60,7 +60,7 @@ export function formatModelId(rawModelId: string): string {
   const nameSegments = startIdx >= 0 ? segments.slice(startIdx) : segments;
   const name = formatName(nameSegments);
 
-  const label = provider ? `[${provider}] ${name}` : name;
+  const label = provider && showProvider ? `[${provider}] ${name}` : name;
   return label + suffix;
 }
 

@@ -18,6 +18,25 @@ describe('renderStatusline', () => {
     expect(lines[0]).toContain('50%');
   });
 
+  it('omits the [provider] bracket when showProvider is false', () => {
+    const lines = renderStatusline({
+      modelId: 'glm-5.1',
+      contextPercentage: 50,
+      theme,
+      gitStatus: { branch: '', dirty: false, ahead: 0, behind: 0 },
+      displayConfig: {
+        showGitStatus: false,
+        showTools: false,
+        showAgents: false,
+        showTodos: false,
+        showCost: false,
+        showProvider: false,
+      },
+    });
+    expect(lines[0]).toContain('glm-5.1');
+    expect(lines[0]).not.toContain('[zai]');
+  });
+
   it('renders context bar with size', () => {
     const lines = renderStatusline({
       modelId: 'deepseek-v4-flash',

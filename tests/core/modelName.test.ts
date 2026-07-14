@@ -26,6 +26,17 @@ describe('formatModelId', () => {
     expect(formatModelId(input)).toBe(expected);
   });
 
+  it('omits the [provider] bracket when showProvider is false, keeping the formatted name', () => {
+    expect(formatModelId('glm-5.1', false)).toBe('glm-5.1');
+    expect(formatModelId('claude-opus-4-8', false)).toBe('opus-4.8');
+    expect(formatModelId('deepseek-v4-pro', false)).toBe('deepseek-v4-pro');
+    expect(formatModelId('claude-haiku-4-5-20251001', false)).toBe('haiku-4.5');
+  });
+
+  it('includes the bracket by default (showProvider defaults true)', () => {
+    expect(formatModelId('glm-5.1')).toBe('[zai] glm-5.1');
+  });
+
   it('renders no bracket when the prefix is not in the map', () => {
     // The map has `kimi`, not the legacy `moonshot` prefix.
     expect(formatModelId('moonshot-v1-128k')).toBe('moonshot-v1-128k');

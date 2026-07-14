@@ -31,10 +31,10 @@ const ALL_DIGITS = /^\d+$/;
 const DATE_SEGMENT = /^\d{6,}$/;
 /**
  * Format a raw model id for display as `[provider] name`.
- * Returns just the version-formatted name (no bracket) when the prefix is not in the map, and
- * `''` for empty input.
+ * Returns just the version-formatted name (no bracket) when the prefix is not in the map, when
+ * `showProvider` is false, and `''` for empty input.
  */
-export function formatModelId(rawModelId) {
+export function formatModelId(rawModelId, showProvider = true) {
     if (!rawModelId)
         return '';
     const suffixMatch = rawModelId.match(CONTEXT_SUFFIX);
@@ -54,7 +54,7 @@ export function formatModelId(rawModelId) {
     }
     const nameSegments = startIdx >= 0 ? segments.slice(startIdx) : segments;
     const name = formatName(nameSegments);
-    const label = provider ? `[${provider}] ${name}` : name;
+    const label = provider && showProvider ? `[${provider}] ${name}` : name;
     return label + suffix;
 }
 /** Join name segments: `.` between two all-digit segments, `-` otherwise; drop a trailing date. */

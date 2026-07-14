@@ -16,7 +16,9 @@ export function renderStatusline(input) {
     const t = input.theme;
     const reset = '\x1b[0m';
     // Line 1: Model + Git + Context
-    const modelText = input.displayConfig.prettyModelName === false ? input.modelId : formatModelId(input.modelId);
+    const modelText = input.displayConfig.prettyModelName === false
+        ? input.modelId
+        : formatModelId(input.modelId, input.displayConfig.showProvider !== false);
     let line1 = `${t.colors.model}${modelText}${reset}`;
     if (input.routing?.active && input.displayConfig.showRouting !== false) {
         line1 += ` ${t.colors.dim}⇄${reset}`;

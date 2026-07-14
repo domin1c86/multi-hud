@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { loadConfig, defaultConfig } from './core/config.js';
+import { loadApiKeys, mergeApiKeys, KEYS_FILENAME } from './core/keys.js';
 import { renderStatusline } from './core/renderer.js';
 import { getGitStatus } from './core/git.js';
 import { computeSessionCost } from './core/cost.js';
@@ -149,6 +150,9 @@ export async function main() {
         }
     }
     const config = loadConfig(CONFIG_PATH);
+    // Provider API keys come from a dedicated keys.json that only this runtime reads (never any
+    // AI-facing command). Overlay them onto the provider config; never log or print them.
+    mergeApiKeys(config, loadApiKeys(path.join(CONFIG_DIR, KEYS_FILENAME)));
     const theme = resolveTheme(config.theme, config.customTheme);
     // Read the full JSON object from stdin (Claude Code sends one JSON object per invocation)
     let input = '';
@@ -222,8 +226,10 @@ export async function main() {
                     balance = balanceResult;
             }
         }
-        catch (err) {
-            errorMessage = String(err);
+        catch {
+            // Never surface the raw provider error (URL/response body) on the status line — it could
+            // echo request context. A generic message is enough; keys are never in the error anyway.
+            errorMessage = `${providerName}: request failed`;
         }
     }
     // Git status

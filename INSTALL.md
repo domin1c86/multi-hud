@@ -20,7 +20,7 @@ Then wire the status line and (optionally) pick your features:
 
 ```
 /multi-hud:setup          # writes the statusLine entry into your settings.json (with a backup)
-/multi-hud:configure      # toggle git/tools/agents/todos/cost, theme, animations, API keys
+/multi-hud:configure      # toggle git/tools/agents/todos/cost/provider label, theme, animations; edit API keys
 ```
 
 `/multi-hud:setup` detects the installed plugin path and registers
@@ -103,25 +103,28 @@ Out of the box the HUD renders everything Claude Code already provides — model
 bar, cost, git, and rate-limit quota bars (Pro/Max only) — with **no network calls**.
 
 To also show a third-party provider's **account balance or plan quota**, give multi-hud an
-API key. Plugin users can run `/multi-hud:configure` and enter it there; otherwise edit
-`~/.claude/plugins/multi-hud/config.json` (created on first run) and set the matching
-provider block:
+API key. Keys live in **`~/.claude/plugins/multi-hud/keys.json`** — a file separate from
+`config.json`. Run `/multi-hud:configure` → **Edit provider API keys** to open it in your
+editor (the command creates it empty and launches it), or create it yourself:
 
 ```json
 {
-  "providers": {
-    "deepseek": { "apiKey": "sk-...", "baseUrl": null },
-    "kimi":     { "apiKey": "sk-...", "baseUrl": null },
-    "glm":      { "apiKey": "...",    "baseUrl": null }
-  }
+  "deepseek": "sk-...",
+  "kimi": "sk-...",
+  "glm": "..."
 }
 ```
 
+> **Security: these keys are for the plugin only.** Only the status-line runtime process reads
+> `keys.json` to query provider APIs — **Claude Code and other AI agents never read it**, and the
+> plugin never prints or logs a key. Keep them out of `config.json` (which AI-facing commands may
+> display). `chmod 600 keys.json` is recommended; the configure command sets it for you.
+
 > **This key is separate from the one that routes Claude Code to the provider.** To *use* a
 > third-party provider in Claude Code you typically set `ANTHROPIC_BASE_URL` and
-> `ANTHROPIC_AUTH_TOKEN` in your environment. multi-hud does **not** see those — it reads
-> the key from its own `config.json` above. They can be the same value, but you must set it
-> in both places. Leave `baseUrl` as `null` to use each provider's default host.
+> `ANTHROPIC_AUTH_TOKEN` in your environment. multi-hud does **not** see those — it reads the
+> key from its own `keys.json`. They can be the same value, but you must set it in both places.
+> Provider host overrides (`baseUrl`) stay in `config.json`.
 
 What each provider exposes:
 
@@ -158,7 +161,7 @@ that works, the HUD will work inside Claude Code once the status line is registe
 | No status line after a plugin update | The install path changes each version — re-run `/multi-hud:setup` to rewrite the absolute path. |
 | `node: command not found` in the status line | Node isn't on Claude Code's `PATH`. Use an absolute node path, e.g. `/usr/local/bin/node ...`. |
 | Status line is blank/errors | Rebuild with `npm run build`; re-run the Verify smoke test to see the raw output. |
-| No balance or quota shown | `apiKey` not set in `config.json`, or that provider has no such API (see the table). |
+| No balance or quota shown | Key not set in `keys.json` (run `/multi-hud:configure` → Edit provider API keys), or that provider has no such API (see the table). |
 | No quota bars | Time-windowed rate-limit bars come from Claude Code only for Claude.ai Pro/Max, or from GLM's provider API. DeepSeek/Kimi have no quota source (balance only). |
 
 For configuration (themes, display toggles, custom colors), see the
