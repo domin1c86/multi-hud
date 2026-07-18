@@ -35,6 +35,8 @@ export interface StatuslineEvent {
   };
   cwd?: string;
   session_id?: string;
+  /** Path to the session transcript JSONL (used to resolve the actual model behind a router). */
+  transcript_path?: string;
   version?: string;
   vim?: { mode: string };
   effort?: { level: string };

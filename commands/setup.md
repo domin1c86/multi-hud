@@ -90,8 +90,9 @@ Confirm it prints `WROTE statusLine -> node "…/dist/index.js"`.
 The HUD works immediately with sensible defaults. Tell the user they can:
 
 - Run `/multi-hud:configure` to toggle display elements, pick a theme, and enable animations.
-- Add a provider API key (for balance/quota) — offer to run `/multi-hud:configure`, or point
-  them at `~/.claude/plugins/multi-hud/config.json` (created automatically on first render).
+- Add a provider API key (for balance/quota): run `/multi-hud:configure` and choose **Edit
+  provider API keys** — it opens `~/.claude/plugins/multi-hud/keys.json` in your editor. Keys live
+  only in that file; the plugin runtime reads them, and Claude Code never does.
 
 ## Step 5: Tell the user what to do next
 

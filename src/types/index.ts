@@ -109,6 +109,9 @@ export interface MultiHudConfig {
     showAgents: boolean;
     showTodos: boolean;
     showCost: boolean;
+    showRouting: boolean;
+    prettyModelName: boolean;
+    showProvider: boolean;
   };
   providers: {
     deepseek: ProviderConfig;

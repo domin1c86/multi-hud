@@ -2,6 +2,7 @@ import { Theme, QuotaWindow, TokenUsage, BalanceInfo } from '../types/index.js';
 import { GitStatus } from './git.js';
 import { ToolCall, AgentStatus, TodoItem } from './transcript.js';
 import { animateBar } from '../animations/index.js';
+import { formatModelId } from './modelName.js';
 
 export interface RenderInput {
   modelId: string;
@@ -22,7 +23,12 @@ export interface RenderInput {
     showAgents: boolean;
     showTodos: boolean;
     showCost: boolean;
+    showRouting?: boolean;
+    prettyModelName?: boolean;
+    showProvider?: boolean;
   };
+  /** Routing state — draws a `⇄` marker after the model when a routing layer is active. */
+  routing?: { active: boolean };
   errorMessage?: string;
   /** Current wall-clock time (ms) driving animation frames. Omit for static output. */
   now?: number;
@@ -48,7 +54,14 @@ export function renderStatusline(input: RenderInput): string[] {
   const reset = '\x1b[0m';
 
   // Line 1: Model + Git + Context
-  let line1 = `${t.colors.model}${input.modelId}${reset}`;
+  const modelText =
+    input.displayConfig.prettyModelName === false
+      ? input.modelId
+      : formatModelId(input.modelId, input.displayConfig.showProvider !== false);
+  let line1 = `${t.colors.model}${modelText}${reset}`;
+  if (input.routing?.active && input.displayConfig.showRouting !== false) {
+    line1 += ` ${t.colors.dim}⇄${reset}`;
+  }
   if (input.displayConfig.showGitStatus && input.gitStatus.branch) {
     const dirty = input.gitStatus.dirty ? `${t.colors.gitDirty}${t.icons.gitDirty}${reset}` : '';
     line1 += ` │ ${t.colors.gitBranch}${t.icons.gitBranch} ${input.gitStatus.branch}${dirty}${reset}`;

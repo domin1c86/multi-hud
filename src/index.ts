@@ -1,10 +1,13 @@
 #!/usr/bin/env node
 import { loadConfig, defaultConfig } from './core/config.js';
+import { loadApiKeys, mergeApiKeys, KEYS_FILENAME } from './core/keys.js';
 import { renderStatusline } from './core/renderer.js';
 import { getGitStatus } from './core/git.js';
 import { computeSessionCost } from './core/cost.js';
 import { getContextLimit } from './core/pricing.js';
 import { resolveTheme } from './themes/index.js';
+import { isRoutedBaseUrl, resolveActiveModel } from './core/routing.js';
+import { readLatestModel } from './core/transcriptModel.js';
 import { resolveBarAnimation } from './animations/index.js';
 import {
   readAnimationState,
@@ -174,6 +177,9 @@ export async function main(): Promise<void> {
     }
   }
   const config = loadConfig(CONFIG_PATH);
+  // Provider API keys come from a dedicated keys.json that only this runtime reads (never any
+  // AI-facing command). Overlay them onto the provider config; never log or print them.
+  mergeApiKeys(config, loadApiKeys(path.join(CONFIG_DIR, KEYS_FILENAME)));
   const theme = resolveTheme(config.theme, config.customTheme);
 
   // Read the full JSON object from stdin (Claude Code sends one JSON object per invocation)
@@ -189,8 +195,13 @@ export async function main(): Promise<void> {
     return;
   }
 
-  // Model ID and provider detection
-  const rawModelId = evt.model?.id || '';
+  // Model ID and provider detection. When a routing layer is active (ANTHROPIC_BASE_URL points
+  // away from Anthropic), the requested model.id is only an alias — prefer the actual model the
+  // transcript reports so provider/cost/display reflect what really served the request.
+  const routed = isRoutedBaseUrl(process.env.ANTHROPIC_BASE_URL);
+  const transcriptModel = routed && evt.transcript_path ? readLatestModel(evt.transcript_path) : null;
+  const active = resolveActiveModel({ requestedId: evt.model?.id || '', transcriptModel, routed });
+  const rawModelId = active.modelId;
   const providerName = detectProvider(rawModelId, config);
 
   // Context data from Claude Code
@@ -249,8 +260,10 @@ export async function main(): Promise<void> {
         const balanceResult = await adapter.getBalance?.();
         if (balanceResult) balance = balanceResult;
       }
-    } catch (err) {
-      errorMessage = String(err);
+    } catch {
+      // Never surface the raw provider error (URL/response body) on the status line — it could
+      // echo request context. A generic message is enough; keys are never in the error anyway.
+      errorMessage = `${providerName}: request failed`;
     }
   }
 
@@ -283,6 +296,7 @@ export async function main(): Promise<void> {
     agents: [],
     todos: [],
     displayConfig: config.display,
+    routing: { active: active.routed },
     errorMessage,
     now,
     animations,

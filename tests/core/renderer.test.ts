@@ -14,8 +14,27 @@ describe('renderStatusline', () => {
       gitStatus: { branch: '', dirty: false, ahead: 0, behind: 0 },
       displayConfig: { showGitStatus: false, showTools: false, showAgents: false, showTodos: false, showCost: false },
     });
-    expect(lines[0]).toContain('deepseek-v4-flash');
+    expect(lines[0]).toContain('[deepseek] deepseek-v4-flash');
     expect(lines[0]).toContain('50%');
+  });
+
+  it('omits the [provider] bracket when showProvider is false', () => {
+    const lines = renderStatusline({
+      modelId: 'glm-5.1',
+      contextPercentage: 50,
+      theme,
+      gitStatus: { branch: '', dirty: false, ahead: 0, behind: 0 },
+      displayConfig: {
+        showGitStatus: false,
+        showTools: false,
+        showAgents: false,
+        showTodos: false,
+        showCost: false,
+        showProvider: false,
+      },
+    });
+    expect(lines[0]).toContain('glm-5.1');
+    expect(lines[0]).not.toContain('[zai]');
   });
 
   it('renders context bar with size', () => {
@@ -125,6 +144,50 @@ describe('renderStatusline', () => {
       now: 12345,
     });
     expect(lines[0]).toContain(staticBar);
+  });
+
+  it('draws the routing marker when routing is active', () => {
+    const lines = renderStatusline({
+      modelId: 'deepseek-v4-pro',
+      contextPercentage: 40,
+      theme,
+      gitStatus: { branch: '', dirty: false, ahead: 0, behind: 0 },
+      displayConfig: { showGitStatus: false, showTools: false, showAgents: false, showTodos: false, showCost: false },
+      routing: { active: true },
+    });
+    expect(lines[0]).toContain('[deepseek] deepseek-v4-pro');
+    expect(lines[0]).toContain('⇄');
+  });
+
+  it('omits the routing marker when routing is inactive', () => {
+    const lines = renderStatusline({
+      modelId: 'deepseek-v4-pro',
+      contextPercentage: 40,
+      theme,
+      gitStatus: { branch: '', dirty: false, ahead: 0, behind: 0 },
+      displayConfig: { showGitStatus: false, showTools: false, showAgents: false, showTodos: false, showCost: false },
+      routing: { active: false },
+    });
+    expect(lines[0]).not.toContain('⇄');
+  });
+
+  it('omits the routing marker when showRouting is disabled even if routing is active', () => {
+    const lines = renderStatusline({
+      modelId: 'deepseek-v4-pro',
+      contextPercentage: 40,
+      theme,
+      gitStatus: { branch: '', dirty: false, ahead: 0, behind: 0 },
+      displayConfig: {
+        showGitStatus: false,
+        showTools: false,
+        showAgents: false,
+        showTodos: false,
+        showCost: false,
+        showRouting: false,
+      },
+      routing: { active: true },
+    });
+    expect(lines[0]).not.toContain('⇄');
   });
 
   it('renders error message with warning icon', () => {

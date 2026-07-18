@@ -1,0 +1,12 @@
+{
+    "xiaomi": "mimo",
+    "moonshot": "kimi",
+    "minimax": "minimax",
+    "deepseek": "deepseek",
+    "zai": "glm",
+    "tencent": "hunyuan",
+    "ali": "qwen",
+    "google": "gemini",
+    "openai": "gpt",
+    "claude": ["opus", "sonnet", "haiku", "fable"]
+}

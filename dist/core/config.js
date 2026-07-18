@@ -16,6 +16,9 @@ export const defaultConfig = {
         showAgents: true,
         showTodos: true,
         showCost: true,
+        showRouting: true,
+        prettyModelName: true,
+        showProvider: true,
     },
     providers: {
         deepseek: { apiKey: '', baseUrl: null },
